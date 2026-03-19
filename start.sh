@@ -53,6 +53,12 @@ if [ ! -d "node_modules" ]; then
     npm install
 fi
 
+# Build if dist doesn't exist
+if [ ! -f "dist/main.js" ]; then
+    echo -e "${YELLOW}Building backend...${NC}"
+    npm run build
+fi
+
 if [ "$USE_PM2" = true ]; then
     echo -e "${YELLOW}[2/4] Starting backend with PM2...${NC}"
     pm2 start npm --name "fitness-backend" -- run start

@@ -56,11 +56,20 @@ cd "$BACKEND_DIR"
 
 # Clean and install
 echo "  Cleaning backend..."
-rm -rf node_modules package-lock.json 2>/dev/null || true
+rm -rf node_modules dist package-lock.json 2>/dev/null || true
 npm cache clean --force 2>/dev/null || true
 
 echo "  Installing backend dependencies..."
 npm install --legacy-peer-deps 2>&1 | tail -5
+
+echo "  Building backend TypeScript..."
+npm run build 2>&1 | tail -10
+
+if [ ! -f "dist/main.js" ]; then
+  echo "✗ Backend build failed - dist/main.js not found"
+  npm run build 2>&1 | tail -50
+  exit 1
+fi
 
 echo "  Starting backend on port 3002..."
 nohup npm run start > "$SCRIPT_DIR/backend.log" 2>&1 &

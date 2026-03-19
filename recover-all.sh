@@ -47,16 +47,21 @@ echo ""
 echo "[3/6] Recovering backend..."
 cd "$BACKEND_DIR"
 
-# Install dependencies if needed
-if [ ! -d "node_modules" ]; then
-  echo "  Installing backend dependencies..."
-  npm install
-fi
+# Clean install
+echo "  Cleaning backend..."
+rm -rf node_modules dist package-lock.json 2>/dev/null || true
+npm cache clean --force 2>/dev/null || true
+
+echo "  Installing backend dependencies..."
+npm install
 
 # Build backend
-if [ -f "tsconfig.json" ]; then
-  echo "  Building backend TypeScript..."
-  npx tsc 2>/dev/null || true
+echo "  Building backend TypeScript..."
+npm run build
+
+if [ ! -f "dist/main.js" ]; then
+  echo "✗ Backend build failed - dist/main.js not found"
+  exit 1
 fi
 
 # Start backend
