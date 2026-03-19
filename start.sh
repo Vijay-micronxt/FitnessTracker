@@ -55,10 +55,10 @@ fi
 
 if [ "$USE_PM2" = true ]; then
     echo -e "${YELLOW}[2/4] Starting backend with PM2...${NC}"
-    pm2 start npm --name "fitness-backend" -- run dev
+    pm2 start npm --name "fitness-backend" -- run start
 else
     echo -e "${YELLOW}[2/4] Starting backend with nohup...${NC}"
-    nohup npm run dev > "$SCRIPT_DIR/backend.log" 2>&1 &
+    nohup npm run start > "$SCRIPT_DIR/backend.log" 2>&1 &
     BACKEND_PID=$!
 fi
 
@@ -75,14 +75,20 @@ if [ ! -d "node_modules" ]; then
     npm install
 fi
 
+# Build if .next doesn't exist
+if [ ! -d ".next" ]; then
+    echo -e "${YELLOW}Building frontend...${NC}"
+    npm run build
+fi
+
 if [ "$USE_PM2" = true ]; then
     echo -e "${YELLOW}[4/4] Starting frontend with PM2...${NC}"
-    pm2 start npm --name "fitness-frontend" -- run dev
+    pm2 start npm --name "fitness-frontend" -- run start
     pm2 save
     pm2 startup
 else
     echo -e "${YELLOW}[4/4] Starting frontend with nohup...${NC}"
-    nohup npm run dev > "$SCRIPT_DIR/frontend.log" 2>&1 &
+    nohup npm run start > "$SCRIPT_DIR/frontend.log" 2>&1 &
     FRONTEND_PID=$!
 fi
 
