@@ -6,6 +6,8 @@ import { config, getLLMConfig } from './config/env';
 import { createLLMService } from './services/llm.base';
 import { BaseService, LLMMessage } from './services/llm.base';
 import { DataService } from './services/data.service';
+import { queueService } from './services/queue.service';
+import { cacheService } from './services/cache.response.service';
 
 const app = Fastify({
   logger: {
@@ -82,6 +84,40 @@ app.post('/api/chat', async (request: any, reply) => {
       return { error: 'Invalid request: message field is required' };
     }
 
+    // Check cache first
+    const cachedResponse = cacheService.get(message);
+    if (cachedResponse) {
+      app.log.info('[CHAT API] Cache hit - returning cached response');
+      return cachedResponse;
+    }
+
+    // Process through queue to handle rate limiting
+    const result = await queueService.enqueue(async () => {
+      return await processChatMessage(message, llmService, dataService, app);
+    });
+
+    // Cache the response
+    cacheService.set(message, result.response, result.citedArticles);
+
+    return result;
+  } catch (error: any) {
+    app.log.error(`[CHAT API] Unexpected error: ${error.message}`);
+    reply.code(500);
+    return { error: 'Internal server error', details: error.message };
+  }
+});
+
+/**
+ * Process chat message with exponential backoff for rate limit handling
+ */
+async function processChatMessage(
+  message: string,
+  llmService: BaseService | null,
+  dataService: DataService,
+  app: any,
+  retries: number = 3
+): Promise<{ response: string; citedArticles: any[] }> {
+  try {
     let response = '';
     let citedArticles: any[] = [];
 
@@ -98,7 +134,6 @@ app.post('/api/chat', async (request: any, reply) => {
           contextInfo = '\n\nRelevant fitness articles and guides to reference:\n\n';
           relevantArticles.forEach((article, idx) => {
             contextInfo += `[${idx + 1}] ${article.title}\n`;
-            // Include first 500 chars of content as context
             contextInfo += article.content.substring(0, 500) + '...\n\n';
           });
           
@@ -110,18 +145,22 @@ app.post('/api/chat', async (request: any, reply) => {
           app.log.info(`[CHAT API] Built context with ${citedArticles.length} citations`);
         }
 
-        // Create system prompt with context - ask Claude to integrate naturally
         const systemPrompt = `You are a fitness expert assistant. When answering questions, integrate the provided fitness information naturally into your response. Do not say "the knowledge base says" or "according to the articles". Instead, present the information as factual fitness guidance. Focus on practical, actionable advice based on exercise science principles.${contextInfo}`;
 
         app.log.info('[CHAT API] Calling LLM service...');
         const userMessage: LLMMessage = { role: 'user', content: message };
-        const llmResponse = await llmService.chat(
-          [userMessage],
-          systemPrompt
-        );
+        const llmResponse = await llmService.chat([userMessage], systemPrompt);
         response = llmResponse.content;
         app.log.info(`[CHAT API] LLM response received (${response.length} chars)`);
       } catch (llmError: any) {
+        // Check if it's a rate limit error (429)
+        if (llmError.status === 429 && retries > 0) {
+          const delayMs = Math.pow(2, 3 - retries) * 1000; // 1s, 2s, 4s
+          app.log.warn(`[CHAT API] Rate limited. Retrying in ${delayMs}ms (${retries} retries left)`);
+          await new Promise((resolve) => setTimeout(resolve, delayMs));
+          return processChatMessage(message, llmService, dataService, app, retries - 1);
+        }
+        
         app.log.error(`[CHAT API] LLM error: ${llmError.message}`);
         response = `I encountered an error processing your request: ${llmError.message}. Please try again.`;
       }
@@ -136,11 +175,10 @@ app.post('/api/chat', async (request: any, reply) => {
       citedArticles
     };
   } catch (error: any) {
-    app.log.error(`[CHAT API] Unexpected error: ${error.message}`);
-    reply.code(500);
-    return { error: 'Internal server error', details: error.message };
+    app.log.error(`[CHAT API] processChatMessage error: ${error.message}`);
+    throw error;
   }
-});
+}
 
 // Start server
 const start = async () => {
