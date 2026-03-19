@@ -35,17 +35,17 @@ echo ""
 echo "[3/4] Cleaning and rebuilding frontend..."
 cd "$FRONTEND_DIR"
 
-# Remove corrupted build
-if [ -d ".next" ]; then
-  echo "  Removing corrupted .next directory..."
-  rm -rf .next
-fi
+# Aggressive clean
+echo "  Cleaning old builds and dependencies..."
+rm -rf .next node_modules package-lock.json 2>/dev/null || true
 
-# Install dependencies if needed
-if [ ! -d "node_modules" ]; then
-  echo "  Installing dependencies..."
-  npm install
-fi
+# Fresh install
+echo "  Installing fresh dependencies..."
+npm install
+
+# Clear npm cache
+echo "  Clearing npm cache..."
+npm cache clean --force 2>/dev/null || true
 
 # Build the frontend
 echo "  Building frontend..."
@@ -53,6 +53,8 @@ npm run build
 
 if [ $? -ne 0 ]; then
   echo "✗ Frontend build failed"
+  echo "Checking for errors..."
+  npm run build 2>&1 | tail -50
   exit 1
 fi
 echo "✓ Frontend build successful"
