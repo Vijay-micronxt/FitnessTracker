@@ -1,0 +1,30 @@
+{
+  "name": "fitness-chat-backend",
+  "version": "1.0.0",
+  "description": "Fitness knowledge assistant backend with vector search and LLM integration",
+  "main": "dist/main.js",
+  "scripts": {
+    "dev": "tsx watch src/main.ts",
+    "build": "tsc",
+    "start": "node dist/main.js",
+    "db:migrate": "node scripts/migrate.ts",
+    "data:ingest": "tsx scripts/ingest-data.ts"
+  },
+  "dependencies": {
+    "@fastify/cors": "^8.4.2",
+    "@fastify/helmet": "^11.1.1",
+    "@fastify/rate-limit": "^9.0.1",
+    "@supabase/supabase-js": "^2.38.1",
+    "dotenv": "^16.3.1",
+    "fastify": "^4.25.2",
+    "openai": "^4.26.0",
+    "redis": "^4.6.11",
+    "uuid": "^9.0.1"
+  },
+  "devDependencies": {
+    "@types/node": "^20.10.5",
+    "@types/uuid": "^10.0.0",
+    "tsx": "^4.7.0",
+    "typescript": "^5.3.3"
+  }
+}
