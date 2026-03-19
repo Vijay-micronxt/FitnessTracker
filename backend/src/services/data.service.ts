@@ -17,10 +17,10 @@ export class DataService {
     if (this.isLoaded) return;
 
     try {
-      // Try to load from the workspace root
+      // Load from data directory within the project
       const dataPath = path.join(
         __dirname,
-        '../../../../darebee_guides.json'
+        '../../data/darebee_guides.json'
       );
 
       if (!fs.existsSync(dataPath)) {
