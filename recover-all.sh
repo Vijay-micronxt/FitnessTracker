@@ -26,11 +26,21 @@ echo "✓ Node.js $NODE_VERSION detected"
 
 echo ""
 echo "[2/6] Stopping existing services..."
-# Kill any existing processes
-pkill -f "npm run dev" 2>/dev/null || true
-pkill -f "npm run start" 2>/dev/null || true
-pkill -f "tsx" 2>/dev/null || true
-sleep 2
+# Kill any existing processes - be very aggressive
+echo "  Killing all Node/npm processes..."
+pkill -9 -f "node" 2>/dev/null || true
+pkill -9 -f "npm" 2>/dev/null || true
+pkill -9 -f "tsx" 2>/dev/null || true
+pkill -9 -f "next" 2>/dev/null || true
+
+# Stop PM2 if running
+if command -v pm2 &> /dev/null; then
+  pm2 kill 2>/dev/null || true
+fi
+
+# Wait for ports to be freed
+echo "  Waiting for ports to be freed..."
+sleep 5
 echo "✓ Services stopped"
 
 echo ""
