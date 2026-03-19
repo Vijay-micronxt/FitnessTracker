@@ -55,13 +55,13 @@ export function MessageBubble({
       initial={{ opacity: 0, y: 10 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.3 }}
-      className={`flex ${isUser ? 'justify-end' : 'justify-start'} mb-4`}
+      className={`flex ${isUser ? 'justify-end' : 'justify-start'}`}
     >
       <div
-        className={`max-w-xs lg:max-w-md px-4 py-3 rounded-lg shadow-md ${
+        className={`max-w-xs sm:max-w-sm lg:max-w-lg px-5 py-4 rounded-2xl shadow-lg ${
           isUser
-            ? 'bg-red-700 text-white rounded-br-none'
-            : 'bg-white text-red-900 border-l-4 border-red-600 rounded-bl-none'
+            ? 'bg-red-700 text-white rounded-tr-sm'
+            : 'bg-gray-50 text-gray-900 border border-gray-200 rounded-tl-sm'
         }`}
       >
         {isLoading ? (
