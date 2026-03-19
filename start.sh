@@ -95,7 +95,7 @@ echo -e "${BLUE}========================================${NC}"
 echo -e "${GREEN}✓ Services Started Successfully!${NC}"
 echo -e "${BLUE}========================================${NC}"
 echo ""
-echo -e "${GREEN}Backend:${NC}  http://localhost:3001"
+echo -e "${GREEN}Backend:${NC}  http://localhost:3002"
 echo -e "${GREEN}Frontend:${NC} http://localhost:3000"
 echo ""
 
