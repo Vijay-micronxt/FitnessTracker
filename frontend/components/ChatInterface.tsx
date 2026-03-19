@@ -93,20 +93,37 @@ export default function ChatInterface() {
 
   return (
     <div className="flex flex-col h-full bg-white">
-      {/* Hero Header */}
+      {/* Header with Back Button */}
       <motion.div
         initial={{ opacity: 0, y: -20 }}
         animate={{ opacity: 1, y: 0 }}
         className="bg-gradient-to-r from-red-700 via-red-600 to-red-800 text-white shadow-2xl"
       >
         <div className="max-w-6xl mx-auto px-4 py-12 sm:px-6 sm:py-16">
-          <div className="max-w-2xl">
-            <h1 className="text-4xl sm:text-5xl font-bold mb-3 leading-tight">
-              Your Personal Fitness Assistant
-            </h1>
-            <p className="text-red-100 text-lg sm:text-xl font-light">
-              Get expert fitness guidance powered by AI. Ask anything about workouts, health, and training.
-            </p>
+          <div className="flex items-start gap-4">
+            <motion.button
+              whileHover={{ scale: 1.1 }}
+              whileTap={{ scale: 0.95 }}
+              onClick={() => {
+                setMessages([]);
+                setShowSuggestions(true);
+                setInputValue('');
+              }}
+              className="mt-1 p-2 hover:bg-red-600/50 rounded-lg transition-all"
+              title="Start new chat"
+            >
+              <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
+              </svg>
+            </motion.button>
+            <div className="flex-1">
+              <h1 className="text-4xl sm:text-5xl font-bold font-outfit mb-3 leading-tight">
+                Your Personal Fitness Assistant
+              </h1>
+              <p className="text-red-100 text-lg sm:text-xl font-light">
+                Get expert fitness guidance powered by AI. Ask anything about workouts, health, and training.
+              </p>
+            </div>
           </div>
         </div>
       </motion.div>
