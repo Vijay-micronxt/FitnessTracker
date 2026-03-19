@@ -34,7 +34,7 @@ export function SuggestedQuestions({ questions, onSelect }: SuggestedQuestionsPr
       animate="visible"
       className="space-y-3"
     >
-      <p className="text-sm text-slate-400 font-medium">Suggested questions:</p>
+      <p className="text-sm text-red-700 font-medium">💡 Suggested questions:</p>
       <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
         {questions.map((question, idx) => (
           <motion.button
@@ -43,7 +43,7 @@ export function SuggestedQuestions({ questions, onSelect }: SuggestedQuestionsPr
             whileHover={{ scale: 1.02 }}
             whileTap={{ scale: 0.98 }}
             onClick={() => onSelect(question)}
-            className="p-3 text-left text-sm bg-slate-800 hover:bg-slate-700 rounded-lg border border-slate-700 hover:border-blue-500 transition-all text-slate-300 hover:text-white"
+            className="p-3 text-left text-sm bg-white hover:bg-red-50 rounded-lg border-2 border-red-300 hover:border-red-600 transition-all text-red-900 hover:text-red-700 shadow-sm hover:shadow-md"
           >
             {question}
           </motion.button>

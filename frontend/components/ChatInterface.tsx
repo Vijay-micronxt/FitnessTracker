@@ -96,17 +96,17 @@ export default function ChatInterface() {
   };
 
   return (
-    <div className="flex flex-col h-full bg-gradient-to-br from-slate-950 via-slate-900 to-slate-950">
+    <div className="flex flex-col h-full bg-gradient-to-br from-white via-red-50 to-white">
       {/* Header */}
       <motion.div
         initial={{ opacity: 0, y: -20 }}
         animate={{ opacity: 1, y: 0 }}
-        className="border-b border-slate-800 bg-slate-900/50 backdrop-blur px-4 py-4 sm:px-6"
+        className="border-b-2 border-red-600 bg-white/80 backdrop-blur px-4 py-4 sm:px-6 shadow-sm"
       >
-        <h1 className="text-2xl font-bold bg-gradient-to-r from-blue-400 to-cyan-400 bg-clip-text text-transparent">
+        <h1 className="text-2xl font-bold bg-gradient-to-r from-red-700 to-red-900 bg-clip-text text-transparent">
           Fitness Assistant
         </h1>
-        <p className="text-sm text-slate-400 mt-1">
+        <p className="text-sm text-red-600 mt-1">
           Ask any fitness question and get expert answers
         </p>
       </motion.div>
@@ -122,8 +122,8 @@ export default function ChatInterface() {
                 className="text-center mb-12"
               >
                 <div className="text-5xl mb-4">💪</div>
-                <h2 className="text-2xl font-bold text-white mb-2">Welcome to Fitness Chat</h2>
-                <p className="text-slate-400">
+                <h2 className="text-2xl font-bold text-red-900 mb-2">Welcome to Fitness Chat</h2>
+                <p className="text-red-700">
                   Get personalized answers to your fitness questions powered by AI
                 </p>
               </motion.div>
@@ -159,7 +159,7 @@ export default function ChatInterface() {
       <motion.div
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
-        className="border-t border-slate-800 bg-slate-900/50 backdrop-blur px-4 py-4 sm:px-6"
+        className="border-t-2 border-red-600 bg-white/80 backdrop-blur px-4 py-4 sm:px-6 shadow-lg"
       >
         <form
           onSubmit={(e) => {
@@ -174,19 +174,19 @@ export default function ChatInterface() {
             onChange={(e) => setInputValue(e.target.value)}
             placeholder="Ask me anything about fitness..."
             disabled={isLoading}
-            className="flex-1 bg-slate-800 border border-slate-700 rounded-lg px-4 py-3 text-white placeholder-slate-500 focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 disabled:opacity-50"
+            className="flex-1 bg-white border-2 border-red-300 rounded-lg px-4 py-3 text-red-900 placeholder-red-400 focus:outline-none focus:border-red-600 focus:ring-2 focus:ring-red-500 disabled:opacity-50"
           />
           <motion.button
             whileHover={{ scale: 1.05 }}
             whileTap={{ scale: 0.95 }}
             type="submit"
             disabled={isLoading || !inputValue.trim()}
-            className="bg-blue-600 hover:bg-blue-700 disabled:bg-slate-700 text-white font-semibold px-6 py-3 rounded-lg transition-colors disabled:cursor-not-allowed"
+            className="bg-red-700 hover:bg-red-800 disabled:bg-red-300 text-white font-semibold px-6 py-3 rounded-lg transition-colors disabled:cursor-not-allowed"
           >
             Send
           </motion.button>
         </form>
-        <p className="text-xs text-slate-500 mt-2">
+        <p className="text-xs text-red-600 mt-2">
           Powered by AI with knowledge from fitness experts
         </p>
       </motion.div>

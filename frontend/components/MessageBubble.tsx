@@ -58,17 +58,17 @@ export function MessageBubble({
       className={`flex ${isUser ? 'justify-end' : 'justify-start'} mb-4`}
     >
       <div
-        className={`max-w-xs lg:max-w-md px-4 py-3 rounded-lg ${
+        className={`max-w-xs lg:max-w-md px-4 py-3 rounded-lg shadow-md ${
           isUser
-            ? 'bg-blue-600 text-white rounded-br-none'
-            : 'bg-slate-800 text-slate-100 rounded-bl-none'
+            ? 'bg-red-700 text-white rounded-br-none'
+            : 'bg-white text-red-900 border-l-4 border-red-600 rounded-bl-none'
         }`}
       >
         {isLoading ? (
           <div className="flex items-center space-x-2">
-            <div className="w-2 h-2 bg-slate-400 rounded-full animate-bounce" />
-            <div className="w-2 h-2 bg-slate-400 rounded-full animate-bounce delay-100" />
-            <div className="w-2 h-2 bg-slate-400 rounded-full animate-bounce delay-200" />
+            <div className="w-2 h-2 bg-red-400 rounded-full animate-bounce" />
+            <div className="w-2 h-2 bg-red-400 rounded-full animate-bounce delay-100" />
+            <div className="w-2 h-2 bg-red-400 rounded-full animate-bounce delay-200" />
           </div>
         ) : (
           <>
@@ -84,7 +84,7 @@ export function MessageBubble({
                   return (
                     <motion.h1 
                       key={idx} 
-                      className="text-lg font-semibold mt-3 mb-2 text-slate-50"
+                      className="text-lg font-semibold mt-3 mb-2 text-red-700"
                       initial={{ opacity: 0, x: -10 }}
                       animate={{ opacity: 1, x: 0 }}
                       transition={{ duration: 0.2 }}
@@ -97,7 +97,7 @@ export function MessageBubble({
                   return (
                     <motion.h2 
                       key={idx} 
-                      className="text-base font-semibold mt-2 mb-1 text-slate-100"
+                      className="text-base font-semibold mt-2 mb-1 text-red-600"
                       initial={{ opacity: 0, x: -10 }}
                       animate={{ opacity: 1, x: 0 }}
                       transition={{ duration: 0.2 }}
@@ -197,19 +197,19 @@ export function MessageBubble({
             </motion.div>
 
             {citedArticles && citedArticles.length > 0 && !isUser && (
-              <div className="mt-3 pt-3 border-t border-slate-700">
-                <p className="text-xs font-semibold text-slate-400 mb-2">Sources:</p>
+              <div className="mt-3 pt-3 border-t-2 border-red-300">
+                <p className="text-xs font-semibold text-red-700 mb-2">📚 Sources:</p>
                 <div className="space-y-3">
                   {citedArticles.map((article, idx) => (
-                    <div key={idx} className="text-xs text-slate-300">
+                    <div key={idx} className="text-xs text-red-900 bg-red-50 p-2 rounded border border-red-200">
                       <div>
-                        <span className="font-medium">{article.title}</span>
-                        <span className="text-slate-500"> • {article.category}</span>
+                        <span className="font-medium text-red-800">{article.title}</span>
+                        <span className="text-red-600"> • {article.category}</span>
                       </div>
                       {article.images && article.images.length > 0 && (
                         <div className="mt-2 grid grid-cols-2 gap-2">
                           {article.images.slice(0, 4).map((imageUrl, imgIdx) => (
-                            <div key={imgIdx} className="relative overflow-hidden rounded bg-slate-800">
+                            <div key={imgIdx} className="relative overflow-hidden rounded bg-white border border-red-200">
                               <img 
                                 src={imageUrl} 
                                 alt={`${article.title} - Image ${imgIdx + 1}`}
