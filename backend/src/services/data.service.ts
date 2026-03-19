@@ -7,6 +7,7 @@ export interface Article {
   title: string;
   content: string;
   category?: string;
+  images?: string[]; // Image URLs extracted from article
 }
 
 export class DataService {
@@ -39,6 +40,7 @@ export class DataService {
           title: article.title,
           content: this.extractTextContent(article.elements),
           category: 'Fitness Guide',
+          images: this.extractImageUrls(article.elements),
         }));
         console.log(`Loaded ${this.articles.length} articles from data source`);
       }
@@ -105,5 +107,17 @@ export class DataService {
 
   getAllArticles(): Article[] {
     return this.articles;
+  }
+
+  private extractImageUrls(elements: any[]): string[] {
+    if (!Array.isArray(elements)) return [];
+
+    const images: string[] = [];
+    for (const element of elements) {
+      if (element.type === 'image' && element.src) {
+        images.push(element.src);
+      }
+    }
+    return images;
   }
 }

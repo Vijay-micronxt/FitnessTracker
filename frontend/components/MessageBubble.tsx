@@ -4,7 +4,7 @@ import { motion } from 'framer-motion';
 interface MessageBubbleProps {
   content: string;
   role: 'user' | 'assistant';
-  citedArticles?: Array<{ title: string; category: string }>;
+  citedArticles?: Array<{ title: string; category: string; images?: string[] }>;
   isLoading?: boolean;
   isStreaming?: boolean;
 }
@@ -199,11 +199,31 @@ export function MessageBubble({
             {citedArticles && citedArticles.length > 0 && !isUser && (
               <div className="mt-3 pt-3 border-t border-slate-700">
                 <p className="text-xs font-semibold text-slate-400 mb-2">Sources:</p>
-                <div className="space-y-1">
+                <div className="space-y-3">
                   {citedArticles.map((article, idx) => (
                     <div key={idx} className="text-xs text-slate-300">
-                      <span className="font-medium">{article.title}</span>
-                      <span className="text-slate-500"> • {article.category}</span>
+                      <div>
+                        <span className="font-medium">{article.title}</span>
+                        <span className="text-slate-500"> • {article.category}</span>
+                      </div>
+                      {article.images && article.images.length > 0 && (
+                        <div className="mt-2 grid grid-cols-2 gap-2">
+                          {article.images.slice(0, 4).map((imageUrl, imgIdx) => (
+                            <div key={imgIdx} className="relative overflow-hidden rounded bg-slate-800">
+                              <img 
+                                src={imageUrl} 
+                                alt={`${article.title} - Image ${imgIdx + 1}`}
+                                className="w-full h-24 object-cover hover:opacity-80 transition-opacity cursor-pointer"
+                                onError={(e) => {
+                                  // Handle broken images gracefully
+                                  const target = e.target as HTMLImageElement;
+                                  target.style.display = 'none';
+                                }}
+                              />
+                            </div>
+                          ))}
+                        </div>
+                      )}
                     </div>
                   ))}
                 </div>

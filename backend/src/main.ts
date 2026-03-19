@@ -141,8 +141,9 @@ async function processChatMessage(
             title: article.title,
             category: article.category || 'Fitness Guide',
             url: article.url,
+            images: article.images || [], // Include article images
           }));
-          app.log.info(`[CHAT API] Built context with ${citedArticles.length} citations`);
+          app.log.info(`[CHAT API] Built context with ${citedArticles.length} citations and ${citedArticles.reduce((sum, a) => sum + (a.images?.length || 0), 0)} images`);
         }
 
         const systemPrompt = `You are a fitness expert assistant. When answering questions, integrate the provided fitness information naturally into your response. Do not say "the knowledge base says" or "according to the articles". Instead, present the information as factual fitness guidance. Focus on practical, actionable advice based on exercise science principles.${contextInfo}`;
