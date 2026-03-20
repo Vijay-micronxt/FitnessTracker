@@ -31,6 +31,7 @@ export default function ChatInterface() {
   const [showSuggestions, setShowSuggestions] = useState(true);
   const [isVoiceInputActive, setIsVoiceInputActive] = useState(false);
   const [isVoiceOutputActive, setIsVoiceOutputActive] = useState(false);
+  const [userLanguage, setUserLanguage] = useState<string>('en');
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const voiceServiceRef = useRef<SarvamVoiceService | null>(null);
 
@@ -100,9 +101,13 @@ export default function ChatInterface() {
     }
   };
 
-  const handleVoiceInput = async (text: string) => {
+  const handleVoiceInput = async (text: string, language?: string) => {
     setInputValue(text);
     setIsVoiceInputActive(false);
+    // Track the user's spoken language for voice output
+    if (language && language !== 'en') {
+      setUserLanguage(language);
+    }
   };
 
   const handlePlayVoiceOutput = async (text?: string) => {
@@ -119,8 +124,24 @@ export default function ChatInterface() {
       const textToPlay = text || lastAssistantMessage?.content || '';
 
       if (voiceServiceRef.current) {
-        const audioBlob = await voiceServiceRef.current.textToSpeech(textToPlay, {
-          language: 'en',
+        let finalText = textToPlay;
+        let ttsLanguage = 'en';
+
+        // If user spoke in a regional language, translate response back to that language
+        if (userLanguage !== 'en' && userLanguage !== '') {
+          console.log(`Translating response to ${userLanguage} for voice output...`);
+          try {
+            finalText = await voiceServiceRef.current.translateFromEnglish(textToPlay, userLanguage);
+            ttsLanguage = userLanguage;
+            console.log('Translated text for TTS:', finalText);
+          } catch (err) {
+            console.warn('Translation to target language failed, using English:', err);
+            // Fall back to English if translation fails
+          }
+        }
+
+        const audioBlob = await voiceServiceRef.current.textToSpeech(finalText, {
+          language: ttsLanguage,
           voice: 'Shubh',
           pace: 1.0,
         });

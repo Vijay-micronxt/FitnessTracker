@@ -305,6 +305,79 @@ export class SarvamVoiceService {
   }
 
   /**
+   * Translate text to English (for processing regional language input)
+   * Uses Google Translate API via free endpoint
+   */
+  async translateToEnglish(text: string, sourceLang: string): Promise<string> {
+    try {
+      if (sourceLang === 'en' || sourceLang.startsWith('en-')) {
+        return text;
+      }
+
+      console.log(`Translating from ${sourceLang} to English:`, text);
+
+      // Use Google Translate API (free, no auth needed)
+      const response = await fetch(
+        `https://api.mymemory.translated.net/get?q=${encodeURIComponent(text)}&langpair=${sourceLang}|en`
+      );
+
+      if (!response.ok) {
+        console.warn('Translation API failed, returning original text');
+        return text;
+      }
+
+      const data = await response.json();
+      const translated = data?.responseData?.translatedText || text;
+      
+      console.log('Translation result:', translated);
+      return translated;
+    } catch (error) {
+      console.warn('Translation error:', error);
+      return text;
+    }
+  }
+
+  /**
+   * Translate text from English to target language (for regional voice output)
+   */
+  async translateFromEnglish(text: string, targetLang: string): Promise<string> {
+    try {
+      if (targetLang === 'en' || targetLang.startsWith('en-')) {
+        return text;
+      }
+
+      console.log(`Translating from English to ${targetLang}:`, text);
+
+      // Use Google Translate API
+      const response = await fetch(
+        `https://api.mymemory.translated.net/get?q=${encodeURIComponent(text)}&langpair=en|${targetLang}`
+      );
+
+      if (!response.ok) {
+        console.warn('Translation API failed, returning original text');
+        return text;
+      }
+
+      const data = await response.json();
+      const translated = data?.responseData?.translatedText || text;
+      
+      console.log('Translation result:', translated);
+      return translated;
+    } catch (error) {
+      console.warn('Translation error:', error);
+      return text;
+    }
+  }
+
+  /**
+   * Normalize language code (e.g., 'hi-IN' to 'hi' for translation APIs)
+   */
+  private normalizeLanguageCode(langCode: string): string {
+    if (!langCode) return 'en';
+    return langCode.split('-')[0].toLowerCase();
+  }
+
+  /**
    * Record audio from microphone using Web Audio API
    */
   async recordAudio(durationMs: number = 10000): Promise<Blob> {

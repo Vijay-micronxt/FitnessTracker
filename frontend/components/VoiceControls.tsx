@@ -5,7 +5,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import SarvamVoiceService from '@/services/sarvam.service';
 
 interface VoiceControlsProps {
-  onVoiceInput?: (text: string) => void;
+  onVoiceInput?: (text: string, language?: string) => void;
   onPlayVoiceOutput?: (text: string) => void;
   isListening?: boolean;
   isPlaying?: boolean;
@@ -25,6 +25,8 @@ export function VoiceControls({
   const [localPlaying, setLocalPlaying] = useState(false);
   const [transcribedText, setTranscribedText] = useState('');
   const [error, setError] = useState<string | null>(null);
+  const [detectedLanguage, setDetectedLanguage] = useState<string>('en');
+  const [isTranslating, setIsTranslating] = useState(false);
   const mediaRecorderRef = useRef<MediaRecorder | null>(null);
   const audioChunksRef = useRef<BlobPart[]>([]);
   const voiceServiceRef = useRef<SarvamVoiceService | null>(null);
@@ -138,12 +140,35 @@ export function VoiceControls({
             console.log('Starting transcription with API service...');
             const result = await voiceServiceRef.current.speechToText(audioBlob);
             console.log('Transcription result:', result);
+            
+            const detectedLang = result.language || 'en';
+            setDetectedLanguage(detectedLang);
             setTranscribedText(result.transcript);
-            if (result.transcript) {
-              onVoiceInput?.(result.transcript);
-              setError(null);
+
+            // If regional language detected, translate to English for processing
+            if (detectedLang !== 'en' && !detectedLang.startsWith('en-')) {
+              console.log(`Detected language: ${detectedLang}. Translating to English for processing...`);
+              setIsTranslating(true);
+              
+              try {
+                const englishText = await voiceServiceRef.current.translateToEnglish(
+                  result.transcript,
+                  detectedLang
+                );
+                console.log('Translated text:', englishText);
+                // Send English translation to chat backend, but track the original language
+                onVoiceInput?.(englishText, detectedLang);
+                setError(null);
+              } catch (translateErr) {
+                console.warn('Translation failed, sending original text:', translateErr);
+                onVoiceInput?.(result.transcript, detectedLang);
+              } finally {
+                setIsTranslating(false);
+              }
             } else {
-              setError('No text received from transcription. Please try again.');
+              // English input, use as-is
+              onVoiceInput?.(result.transcript, 'en');
+              setError(null);
             }
           }
         } catch (err) {
@@ -152,6 +177,7 @@ export function VoiceControls({
           console.error('Transcription error:', err);
         } finally {
           setLocalListening(false);
+          setIsTranslating(false);
         }
       };
 
