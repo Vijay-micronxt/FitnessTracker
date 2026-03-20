@@ -255,7 +255,7 @@ export function VoiceControls({
       if (voiceServiceRef.current) {
         const audioBlob = await voiceServiceRef.current.textToSpeech(text, {
           language: 'en',
-          voice: 'Shubh',
+          voice: 'vidya',
           pace: 1.0,
         });
 

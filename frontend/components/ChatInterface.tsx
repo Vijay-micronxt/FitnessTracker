@@ -139,6 +139,17 @@ export default function ChatInterface() {
             finalText = await voiceServiceRef.current.translateFromEnglish(textToPlay, userLanguage);
             ttsLanguage = userLanguage;
             console.log('Translated text for TTS:', finalText);
+            
+            // Update the displayed message to show the translated version
+            if (lastAssistantMessage) {
+              setMessages((prev) =>
+                prev.map((msg) =>
+                  msg.id === lastAssistantMessage.id
+                    ? { ...msg, content: finalText }
+                    : msg
+                )
+              );
+            }
           } catch (err) {
             console.warn('Translation to target language failed, using English:', err);
             // Fall back to English if translation fails
@@ -147,7 +158,7 @@ export default function ChatInterface() {
 
         const audioBlob = await voiceServiceRef.current.textToSpeech(finalText, {
           language: ttsLanguage,
-          voice: 'vijay',
+          voice: 'vidya',
           pace: 1.0,
         });
 
