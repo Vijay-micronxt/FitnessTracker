@@ -145,6 +145,56 @@ export class SarvamVoiceService {
     }
   ): Promise<Blob> {
     try {
+      // If text is short enough, process directly
+      if (text.length <= 500) {
+        return this.synthesizeChunk(text, options);
+      }
+
+      // For longer text, split into chunks and synthesize separately
+      console.log(`Text length: ${text.length}, splitting into chunks for TTS...`);
+      const chunks = this.splitIntoChunks(text, 450); // 450 chars safety margin
+      const audioBlobs: Blob[] = [];
+
+      for (const chunk of chunks) {
+        try {
+          const audioBlob = await this.synthesizeChunk(chunk, options);
+          audioBlobs.push(audioBlob);
+          // Small delay to avoid rate limiting
+          await new Promise(resolve => setTimeout(resolve, 100));
+        } catch (err) {
+          console.warn('Chunk synthesis failed, continuing with next chunk:', err);
+        }
+      }
+
+      // Concatenate all audio blobs
+      if (audioBlobs.length === 0) {
+        throw new Error('Failed to synthesize any audio chunks');
+      }
+
+      const concatenatedBlob = new Blob(audioBlobs, { type: 'audio/wav' });
+      console.log(`Synthesized ${audioBlobs.length} audio chunks, total size: ${concatenatedBlob.size} bytes`);
+      return concatenatedBlob;
+    } catch (error) {
+      console.error('Text-to-Speech error:', error);
+      throw error;
+    }
+  }
+
+  /**
+   * Synthesize a single chunk of text (respects 500 char TTS API limit)
+   */
+  private async synthesizeChunk(
+    text: string,
+    options?: {
+      language?: string;
+      voice?: string;
+      pace?: number;
+      temperature?: number;
+      format?: string;
+      sampleRate?: number;
+    }
+  ): Promise<Blob> {
+    try {
       const payload = {
         inputs: [text],
         target_language_code: options?.language || 'en',
@@ -154,6 +204,8 @@ export class SarvamVoiceService {
         format: options?.format || 'wav',
         sample_rate: options?.sampleRate || 16000,
       };
+
+      console.log('Synthesizing chunk:', text.substring(0, 100) + '...');
 
       const response = await fetch(`${this.baseUrl}/text-to-speech`, {
         method: 'POST',
@@ -172,7 +224,7 @@ export class SarvamVoiceService {
           headers: Object.fromEntries(response.headers),
           body: errorText,
         });
-        throw new Error(`Speech-to-Text API error: ${response.status} - ${errorText}`);
+        throw new Error(`Text-to-Speech API error: ${response.status} - ${errorText}`);
       }
 
       const contentType = response.headers.get('content-type') || '';
@@ -197,7 +249,7 @@ export class SarvamVoiceService {
 
       return await response.blob();
     } catch (error) {
-      console.error('Text-to-Speech error:', error);
+      console.error('Text-to-Speech chunk error:', error);
       throw error;
     }
   }
