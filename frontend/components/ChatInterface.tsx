@@ -4,6 +4,8 @@ import React, { useState, useRef, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { MessageBubble } from './MessageBubble';
 import { SuggestedQuestions } from './SuggestedQuestions';
+import { VoiceControls } from './VoiceControls';
+import SarvamVoiceService from '@/services/sarvam.service';
 
 interface Message {
   id: string;
@@ -27,7 +29,14 @@ export default function ChatInterface() {
   const [inputValue, setInputValue] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [showSuggestions, setShowSuggestions] = useState(true);
+  const [isVoiceInputActive, setIsVoiceInputActive] = useState(false);
+  const [isVoiceOutputActive, setIsVoiceOutputActive] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
+  const voiceServiceRef = useRef<SarvamVoiceService | null>(null);
+
+  useEffect(() => {
+    voiceServiceRef.current = new SarvamVoiceService();
+  }, []);
 
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
@@ -88,6 +97,40 @@ export default function ChatInterface() {
       setMessages((prev) => [...prev, errorMessage]);
     } finally {
       setIsLoading(false);
+    }
+  };
+
+  const handleVoiceInput = async (text: string) => {
+    setInputValue(text);
+    setIsVoiceInputActive(false);
+  };
+
+  const handlePlayVoiceOutput = async (text?: string) => {
+    try {
+      setIsVoiceOutputActive(true);
+      const lastAssistantMessage = [...messages].reverse().find((m) => m.role === 'assistant');
+
+      if (!lastAssistantMessage && !text) {
+        console.warn('No message to play');
+        setIsVoiceOutputActive(false);
+        return;
+      }
+
+      const textToPlay = text || lastAssistantMessage?.content || '';
+
+      if (voiceServiceRef.current) {
+        const audioBlob = await voiceServiceRef.current.textToSpeech(textToPlay, {
+          language: 'en',
+          voice: 'Shubh',
+          pace: 1.0,
+        });
+
+        await voiceServiceRef.current.playAudio(audioBlob);
+      }
+    } catch (error) {
+      console.error('Voice output error:', error);
+    } finally {
+      setIsVoiceOutputActive(false);
     }
   };
 
@@ -216,6 +259,28 @@ export default function ChatInterface() {
         className="bg-white border-t-2 border-red-100 px-4 py-6 sm:px-6 shadow-2xl"
       >
         <div className="max-w-4xl mx-auto">
+          {/* Voice Controls */}
+          <div className="mb-4 flex items-center gap-2 pb-3 border-b border-gray-200">
+            <VoiceControls
+              onVoiceInput={handleVoiceInput}
+              onPlayVoiceOutput={handlePlayVoiceOutput}
+              isListening={isVoiceInputActive}
+              isPlaying={isVoiceOutputActive}
+            />
+            {messages.length > 0 && (
+              <motion.button
+                whileHover={{ scale: 1.05 }}
+                whileTap={{ scale: 0.95 }}
+                onClick={() => handlePlayVoiceOutput()}
+                disabled={isVoiceOutputActive}
+                className="ml-auto text-xs px-2 py-1 bg-blue-100 hover:bg-blue-200 text-blue-700 rounded-md transition-colors disabled:opacity-50"
+                title="Play last response as voice"
+              >
+                🔊 Play Response
+              </motion.button>
+            )}
+          </div>
+
           <form
             onSubmit={(e) => {
               e.preventDefault();
