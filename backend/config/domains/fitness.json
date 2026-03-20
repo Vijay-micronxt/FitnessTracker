@@ -1,0 +1,71 @@
+{
+  "id": "fitness",
+  "name": "Fitness Tracker",
+  "description": "Personal fitness and workout coaching platform",
+  "version": "1.0.0",
+  "environment": "development",
+  "branding": {
+    "domain": "fitness",
+    "brandName": "Fitness Tracker",
+    "brandDescription": "Your personal fitness companion",
+    "brandLogo": "/assets/fitness/logo.png",
+    "faviconUrl": "/assets/fitness/favicon.ico",
+    "primaryColor": "#ff6b35",
+    "secondaryColor": "#004e89",
+    "accentColor": "#f7b801",
+    "textColor": "#1a1a1a",
+    "backgroundColor": "#ffffff",
+    "fontFamily": "Inter, system-ui, sans-serif",
+    "fontSize": {
+      "small": "12px",
+      "base": "16px",
+      "large": "20px",
+      "xlarge": "32px"
+    }
+  },
+  "dataSource": {
+    "type": "json",
+    "filePath": "./data/fitness_guides.json"
+  },
+  "llm": {
+    "provider": "claude",
+    "model": "claude-3-sonnet-20240229",
+    "temperature": 0.7,
+    "maxTokens": 1024,
+    "systemPromptTemplate": "You are an expert fitness coach and nutritionist. Provide practical, science-based fitness and workout advice in the {domain} domain. Focus on safe, effective exercises and training principles."
+  },
+  "features": {
+    "voiceInput": true,
+    "voiceOutput": true,
+    "videoSupport": false,
+    "socialSharing": true,
+    "userAccounts": true,
+    "offlineMode": false,
+    "analyticsTracking": true,
+    "multiLanguageSupport": true
+  },
+  "businessLogic": {
+    "currency": "INR",
+    "maxSearchResults": 5,
+    "cacheEnabled": true,
+    "cacheTtlSeconds": 3600,
+    "supportedLanguages": ["en", "ta", "te", "hi", "kn", "ml"],
+    "defaultLanguage": "en",
+    "voiceSampleRate": 16000,
+    "rateLimitWindowMs": 3600000,
+    "rateLimitMaxRequests": 30,
+    "contentCategories": ["Cardio", "Strength", "Flexibility", "Nutrition", "Recovery"],
+    "resultsPerPage": 10
+  },
+  "api": {
+    "baseUrl": "http://localhost:3001",
+    "timeout": 30000,
+    "retryAttempts": 3,
+    "retryDelayMs": 1000
+  },
+  "logging": {
+    "level": "info",
+    "format": "text",
+    "enableFileLogging": false
+  }
+}

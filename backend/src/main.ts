@@ -3,6 +3,8 @@ import fastifyHelmet from '@fastify/helmet';
 import fastifyCors from '@fastify/cors';
 import fastifyRateLimit from '@fastify/rate-limit';
 import { config, getLLMConfig } from './config/env';
+import { getDomainConfig, getConfigLoader } from './config/domain';
+import { DomainConfig } from './config/schema';
 import { createLLMService } from './services/llm.base';
 import { BaseService, LLMMessage } from './services/llm.base';
 import { DataService } from './services/data.service';
@@ -14,6 +16,26 @@ const app = Fastify({
     level: config.logLevel,
   },
 });
+
+// Load domain configuration
+let domainConfig: DomainConfig | null = null;
+try {
+  const configLoader = getConfigLoader();
+  domainConfig = configLoader.getConfig();
+  
+  // Validate configuration
+  const validation = configLoader.validate();
+  if (!validation.valid) {
+    app.log.error('[INIT] Domain configuration validation failed:');
+    validation.errors.forEach(err => app.log.error(`  - ${err}`));
+    process.exit(1);
+  }
+  
+  configLoader.printSummary();
+} catch (error: any) {
+  app.log.error(`[INIT] Failed to load domain configuration: ${error.message}`);
+  process.exit(1);
+}
 
 // Initialize LLM service
 let llmService: BaseService | null = null;
@@ -54,13 +76,24 @@ const registerMiddleware = async () => {
 app.get('/', async () => {
   app.log.info('[ROOT] Health check');
   return { 
-    message: 'Fitness Chat API', 
+    message: domainConfig?.branding.brandName || 'Fitness Chat API',
     version: '1.0.0',
+    domain: domainConfig?.id || 'unknown',
     status: 'running',
     llmProvider: config.llmProvider,
+    features: domainConfig?.features || {},
+    branding: {
+      name: domainConfig?.branding.brandName,
+      logo: domainConfig?.branding.brandLogo,
+      colors: {
+        primary: domainConfig?.branding.primaryColor,
+        secondary: domainConfig?.branding.secondaryColor,
+      },
+    },
     endpoints: {
       health: '/health',
-      chat: '/api/chat'
+      chat: '/api/chat',
+      config: '/api/config'
     }
   };
 });
@@ -69,6 +102,29 @@ app.get('/', async () => {
 app.get('/health', async () => {
   app.log.info('[HEALTH] Check received');
   return { status: 'ok', timestamp: new Date().toISOString() };
+});
+
+// Domain configuration endpoint (for frontend to fetch branding, features, etc.)
+app.get('/api/config', async (request: any, reply) => {
+  app.log.info('[CONFIG API] Configuration request');
+  
+  if (!domainConfig) {
+    reply.code(500);
+    return { error: 'Configuration not loaded' };
+  }
+
+  // Return public configuration (exclude sensitive data like API keys)
+  return {
+    domain: domainConfig.id,
+    branding: domainConfig.branding,
+    features: domainConfig.features,
+    businessLogic: {
+      currency: domainConfig.businessLogic.currency,
+      supportedLanguages: domainConfig.businessLogic.supportedLanguages,
+      defaultLanguage: domainConfig.businessLogic.defaultLanguage,
+    },
+    environment: domainConfig.environment,
+  };
 });
 
 // Chat endpoint (with LLM integration and data retrieval)

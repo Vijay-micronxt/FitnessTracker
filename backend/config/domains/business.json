@@ -1,0 +1,71 @@
+{
+  "id": "business",
+  "name": "Business Assistant",
+  "description": "Business coaching and professional development platform",
+  "version": "1.0.0",
+  "environment": "development",
+  "branding": {
+    "domain": "business",
+    "brandName": "Business Assistant",
+    "brandDescription": "Your professional growth companion",
+    "brandLogo": "/assets/business/logo.png",
+    "faviconUrl": "/assets/business/favicon.ico",
+    "primaryColor": "#1e40af",
+    "secondaryColor": "#0f766e",
+    "accentColor": "#fbbf24",
+    "textColor": "#111827",
+    "backgroundColor": "#f9fafb",
+    "fontFamily": "Segoe UI, Roboto, sans-serif",
+    "fontSize": {
+      "small": "13px",
+      "base": "15px",
+      "large": "18px",
+      "xlarge": "28px"
+    }
+  },
+  "dataSource": {
+    "type": "json",
+    "filePath": "./data/business_guides.json"
+  },
+  "llm": {
+    "provider": "claude",
+    "model": "claude-3-sonnet-20240229",
+    "temperature": 0.6,
+    "maxTokens": 1500,
+    "systemPromptTemplate": "You are a seasoned business consultant and professional coach. Provide strategic business advice, leadership coaching, and professional development guidance in the {domain} domain. Focus on practical, actionable insights for career growth and business success."
+  },
+  "features": {
+    "voiceInput": false,
+    "voiceOutput": false,
+    "videoSupport": true,
+    "socialSharing": true,
+    "userAccounts": true,
+    "offlineMode": false,
+    "analyticsTracking": true,
+    "multiLanguageSupport": false
+  },
+  "businessLogic": {
+    "currency": "USD",
+    "maxSearchResults": 8,
+    "cacheEnabled": true,
+    "cacheTtlSeconds": 7200,
+    "supportedLanguages": ["en"],
+    "defaultLanguage": "en",
+    "rateLimitWindowMs": 3600000,
+    "rateLimitMaxRequests": 50,
+    "contentCategories": ["Leadership", "Strategy", "Marketing", "Finance", "HR", "Operations"],
+    "resultsPerPage": 15
+  },
+  "api": {
+    "baseUrl": "http://localhost:3001",
+    "timeout": 45000,
+    "retryAttempts": 3,
+    "retryDelayMs": 1000
+  },
+  "logging": {
+    "level": "info",
+    "format": "json",
+    "enableFileLogging": true,
+    "logDirectory": "./logs/business"
+  }
+}
