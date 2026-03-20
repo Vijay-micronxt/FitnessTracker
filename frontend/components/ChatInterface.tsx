@@ -299,7 +299,7 @@ export default function ChatInterface() {
                   lineHeight: messages.length === 0 ? '2.5rem' : '2rem'
                 }}
                 transition={{ duration: 0.6, ease: 'easeInOut' }}
-                className="font-bold font-outfit mb-3 leading-tight"
+                className="font-bold font-outfit mb-3 leading-tight text-white"
               >
                 Your Personal Fitness Assistant
               </motion.h1>
