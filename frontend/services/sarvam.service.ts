@@ -331,13 +331,16 @@ export class SarvamVoiceService {
   }
 
   /**
-   * Play audio blob in the browser
+   * Play audio blob in the browser with autoplay policy handling
    */
   playAudio(audioBlob: Blob): Promise<void> {
     return new Promise((resolve, reject) => {
       try {
         const audioUrl = URL.createObjectURL(audioBlob);
         const audio = new Audio(audioUrl);
+        
+        // Enable audio preloading for faster playback
+        audio.preload = 'auto';
         
         audio.onended = () => {
           URL.revokeObjectURL(audioUrl);
@@ -346,11 +349,46 @@ export class SarvamVoiceService {
 
         audio.onerror = (error) => {
           URL.revokeObjectURL(audioUrl);
+          console.error('Audio playback error:', error);
           reject(error);
         };
 
-        audio.play().catch(reject);
+        // Attempt to play with proper error handling for autoplay policies
+        const playPromise = audio.play();
+        
+        if (playPromise !== undefined) {
+          playPromise
+            .then(() => {
+              console.log('Audio playback started successfully');
+            })
+            .catch((error) => {
+              console.warn('Autoplay blocked by browser policy:', error.name);
+              
+              // Try to unmute and retry if blocked
+              if (error.name === 'NotAllowedError') {
+                // Create a new audio element with muted attribute
+                const mutedAudio = new Audio(audioUrl);
+                mutedAudio.muted = true;
+                mutedAudio.play()
+                  .then(() => {
+                    // Try to unmute after play starts
+                    setTimeout(() => {
+                      mutedAudio.muted = false;
+                      console.log('Audio unmuted after autoplay bypass');
+                    }, 100);
+                  })
+                  .catch(() => {
+                    // If even muted playback fails, show user-friendly message
+                    console.error('Audio playback failed even with muting strategy');
+                    reject(new Error('Audio playback blocked. Please enable audio in browser settings and try again.'));
+                  });
+              } else {
+                reject(error);
+              }
+            });
+        }
       } catch (error) {
+        console.error('Error creating audio element:', error);
         reject(error);
       }
     });

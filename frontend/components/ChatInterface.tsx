@@ -32,6 +32,7 @@ export default function ChatInterface() {
   const [isVoiceInputActive, setIsVoiceInputActive] = useState(false);
   const [isVoiceOutputActive, setIsVoiceOutputActive] = useState(false);
   const [userLanguage, setUserLanguage] = useState<string>('en');
+  const [voiceError, setVoiceError] = useState<string>('');
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const voiceServiceRef = useRef<SarvamVoiceService | null>(null);
 
@@ -165,7 +166,20 @@ export default function ChatInterface() {
         await voiceServiceRef.current.playAudio(audioBlob);
       }
     } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : 'Voice output failed';
       console.error('Voice output error:', error);
+      
+      // Show user-friendly error message
+      if (errorMessage.includes('blocked') || errorMessage.includes('NotAllowed')) {
+        setVoiceError('Audio playback is blocked. Please check your browser audio settings and enable audio for this site.');
+      } else if (errorMessage.includes('audio')) {
+        setVoiceError('Audio playback failed. Please try again.');
+      } else {
+        setVoiceError('Voice output failed. Please try again.');
+      }
+      
+      // Clear error after 5 seconds
+      setTimeout(() => setVoiceError(''), 5000);
     } finally {
       setIsVoiceOutputActive(false);
     }
@@ -239,6 +253,24 @@ export default function ChatInterface() {
       {/* Messages Area */}
       <div className="flex-1 overflow-y-auto px-4 py-8 sm:px-6 bg-gradient-to-b from-white to-red-50">
         <div className="max-w-4xl mx-auto">
+          {/* Voice Error Message */}
+          {voiceError && (
+            <motion.div
+              initial={{ opacity: 0, y: -10 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -10 }}
+              className="mb-4 p-4 bg-yellow-50 border border-yellow-200 rounded-lg text-yellow-800 text-sm"
+            >
+              <div className="flex items-start gap-3">
+                <span className="text-lg">⚠️</span>
+                <div>
+                  <p className="font-medium">Audio Output Issue</p>
+                  <p>{voiceError}</p>
+                </div>
+              </div>
+            </motion.div>
+          )}
+
           {messages.length === 0 && showSuggestions ? (
             <div className="h-full flex items-center justify-center">
               <div className="w-full">
