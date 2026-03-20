@@ -1,0 +1,55 @@
+{
+  "domain": "healthcare",
+  "branding": {
+    "appName": "Healthcare Portal",
+    "colors": {
+      "primary": "#dc2626",
+      "secondary": "#0ea5e9",
+      "accent": "#8b5cf6"
+    }
+  },
+  "dataSources": {
+    "medicalRecords": {
+      "type": "rest_api",
+      "baseUrl": "https://secure-api.healthcare.com",
+      "endpoints": {
+        "list": "/api/v1/records",
+        "getById": "/api/v1/records/{id}",
+        "create": "/api/v1/records",
+        "update": "/api/v1/records/{id}",
+        "delete": "/api/v1/records/{id}"
+      },
+      "authentication": {
+        "type": "bearer",
+        "credentials": "YOUR_BEARER_TOKEN_HERE"
+      },
+      "timeout": 15000,
+      "cacheTTL": 600000
+    },
+    "appointments": {
+      "type": "graphql",
+      "endpoint": "https://api.healthcare.com/graphql",
+      "queries": {
+        "list": "query { appointments { id patientId doctorId dateTime status } }",
+        "getById": "query getAppointment($id: ID!) { appointment(id: $id) { id patientId doctorId dateTime status notes } }",
+        "search": "query searchAppointments($patientId: ID!) { appointmentsByPatient(patientId: $patientId) { id dateTime status } }"
+      },
+      "authentication": {
+        "type": "bearer",
+        "credentials": "YOUR_BEARER_TOKEN_HERE"
+      },
+      "cacheTTL": 300000
+    },
+    "vitals": {
+      "type": "sql",
+      "connectionString": "postgresql://user:password@healthcare-db.example.com/vital_signs",
+      "table": "vital_signs",
+      "cacheTTL": 120000
+    }
+  },
+  "businessLogic": {
+    "defaultLanguage": "en",
+    "supportedLanguages": ["en", "ta", "hi"],
+    "complianceMode": "HIPAA"
+  }
+}

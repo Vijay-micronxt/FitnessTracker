@@ -2,6 +2,7 @@ import type { Metadata } from 'next';
 import './globals.css';
 import { ConfigProvider } from '../contexts/ConfigContext';
 import { ContentProvider } from '../contexts/ContentContext';
+import { DataSourceProvider } from '../contexts/DataSourceContext';
 import { ThemeProvider } from '../components/ThemeProvider';
 
 export const metadata: Metadata = {
@@ -23,7 +24,9 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         <ConfigProvider>
           <ThemeProvider>
             <ContentProvider>
-              {children}
+              <DataSourceProvider>
+                {children}
+              </DataSourceProvider>
             </ContentProvider>
           </ThemeProvider>
         </ConfigProvider>

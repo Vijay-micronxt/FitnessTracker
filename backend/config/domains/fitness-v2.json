@@ -1,0 +1,31 @@
+{
+  "domain": "fitness",
+  "branding": {
+    "appName": "Fitness Tracker",
+    "colors": {
+      "primary": "#10b981",
+      "secondary": "#06b6d4",
+      "accent": "#f59e0b"
+    }
+  },
+  "dataSources": {
+    "exercises": {
+      "type": "json",
+      "filePath": "/data/darebee_guides.json"
+    },
+    "workoutPlans": {
+      "type": "rest_api",
+      "baseUrl": "https://api.darebee.com",
+      "endpoints": {
+        "list": "/api/v1/workouts",
+        "getById": "/api/v1/workouts/{id}",
+        "search": "/api/v1/workouts/search"
+      },
+      "cacheTTL": 300000
+    }
+  },
+  "businessLogic": {
+    "defaultLanguage": "en",
+    "supportedLanguages": ["en", "ta", "te", "hi", "kn", "ml"]
+  }
+}

@@ -1,0 +1,46 @@
+{
+  "domain": "business",
+  "branding": {
+    "appName": "Business Platform",
+    "colors": {
+      "primary": "#1e40af",
+      "secondary": "#0891b2",
+      "accent": "#d97706"
+    }
+  },
+  "dataSources": {
+    "companies": {
+      "type": "sql",
+      "connectionString": "postgresql://user:password@db.example.com/business_db",
+      "table": "companies",
+      "cacheTTL": 600000
+    },
+    "mentors": {
+      "type": "rest_api",
+      "baseUrl": "https://api.business.com",
+      "endpoints": {
+        "list": "/api/v1/mentors",
+        "getById": "/api/v1/mentors/{id}",
+        "search": "/api/v1/mentors/search"
+      },
+      "authentication": {
+        "type": "api_key",
+        "credentials": "YOUR_API_KEY_HERE"
+      },
+      "cacheTTL": 300000
+    },
+    "tools": {
+      "type": "graphql",
+      "endpoint": "https://api.business.com/graphql",
+      "queries": {
+        "list": "query { tools { id title description } }",
+        "getById": "query getToolById($id: ID!) { tool(id: $id) { id title description content } }"
+      },
+      "cacheTTL": 300000
+    }
+  },
+  "businessLogic": {
+    "defaultLanguage": "en",
+    "supportedLanguages": ["en", "ta", "es", "fr"]
+  }
+}
