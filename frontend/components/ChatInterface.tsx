@@ -97,35 +97,63 @@ export default function ChatInterface() {
       <motion.div
         initial={{ opacity: 0, y: -20 }}
         animate={{ opacity: 1, y: 0 }}
-        className="bg-gradient-to-r from-red-700 via-red-600 to-red-800 text-white shadow-2xl"
+        className="bg-gradient-to-r from-red-700 via-red-600 to-red-800 text-white shadow-2xl overflow-hidden"
+        layout
       >
-        <div className="max-w-6xl mx-auto px-4 py-12 sm:px-6 sm:py-16">
+        <motion.div 
+          className="max-w-6xl mx-auto px-4 sm:px-6"
+          animate={{
+            paddingTop: messages.length === 0 ? '3rem' : '0.75rem',
+            paddingBottom: messages.length === 0 ? '4rem' : '0.75rem'
+          }}
+          transition={{ duration: 0.6, ease: 'easeInOut' }}
+        >
           <div className="flex items-start gap-4">
-            <motion.button
-              whileHover={{ scale: 1.1 }}
-              whileTap={{ scale: 0.95 }}
-              onClick={() => {
-                setMessages([]);
-                setShowSuggestions(true);
-                setInputValue('');
-              }}
-              className="mt-1 p-2 hover:bg-red-600/50 rounded-lg transition-all"
-              title="Start new chat"
-            >
-              <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
-              </svg>
-            </motion.button>
-            <div className="flex-1">
-              <h1 className="text-4xl sm:text-5xl font-bold font-outfit mb-3 leading-tight">
+            {messages.length > 0 && (
+              <motion.button
+                initial={{ opacity: 0, scale: 0.8 }}
+                animate={{ opacity: 1, scale: 1 }}
+                exit={{ opacity: 0, scale: 0.8 }}
+                whileHover={{ scale: 1.1 }}
+                whileTap={{ scale: 0.95 }}
+                onClick={() => {
+                  setMessages([]);
+                  setShowSuggestions(true);
+                  setInputValue('');
+                }}
+                className="mt-1 p-2 hover:bg-red-600/50 rounded-lg transition-all flex-shrink-0"
+                title="Start new chat"
+              >
+                <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
+                </svg>
+              </motion.button>
+            )}
+            <div className="flex-1 min-w-0">
+              <motion.h1 
+                animate={{ 
+                  fontSize: messages.length === 0 ? '2.25rem' : '1.875rem',
+                  lineHeight: messages.length === 0 ? '2.5rem' : '2rem'
+                }}
+                transition={{ duration: 0.6, ease: 'easeInOut' }}
+                className="font-bold font-outfit mb-3 leading-tight"
+              >
                 Your Personal Fitness Assistant
-              </h1>
-              <p className="text-red-100 text-lg sm:text-xl font-light">
+              </motion.h1>
+              <motion.div
+                animate={{ 
+                  opacity: messages.length === 0 ? 1 : 0,
+                  height: messages.length === 0 ? 'auto' : 0,
+                  marginBottom: messages.length === 0 ? '0.75rem' : 0
+                }}
+                transition={{ duration: 0.5, ease: 'easeInOut' }}
+                className="text-red-100 text-lg sm:text-xl font-light overflow-hidden"
+              >
                 Get expert fitness guidance powered by AI. Ask anything about workouts, health, and training.
-              </p>
+              </motion.div>
             </div>
           </div>
-        </div>
+        </motion.div>
       </motion.div>
 
       {/* Messages Area */}
@@ -195,20 +223,27 @@ export default function ChatInterface() {
             }}
             className="flex gap-3"
           >
-            <input
-              type="text"
+            <textarea
               value={inputValue}
               onChange={(e) => setInputValue(e.target.value)}
-              placeholder="Ask me anything about fitness..."
+              onKeyDown={(e) => {
+                if (e.key === 'Enter' && !e.shiftKey) {
+                  e.preventDefault();
+                  handleSendMessage();
+                }
+              }}
+              placeholder="Ask me anything about fitness... (Shift+Enter for new line)"
               disabled={isLoading}
-              className="flex-1 bg-gray-100 border-2 border-gray-300 rounded-xl px-4 py-3 text-gray-900 placeholder-gray-500 focus:outline-none focus:bg-white focus:border-red-600 focus:ring-2 focus:ring-red-500/50 disabled:opacity-50 transition-all text-base"
+              rows={2}
+              className="flex-1 bg-gray-100 border-2 border-gray-300 rounded-xl px-4 py-3 text-gray-900 placeholder-gray-500 focus:outline-none focus:bg-white focus:border-red-600 focus:ring-2 focus:ring-red-500/50 disabled:opacity-50 transition-all text-base resize-none"
+              style={{ minHeight: '56px', maxHeight: '120px' }}
             />
             <motion.button
               whileHover={{ scale: 1.05 }}
               whileTap={{ scale: 0.95 }}
               type="submit"
               disabled={isLoading || !inputValue.trim()}
-              className="bg-red-700 hover:bg-red-800 disabled:bg-red-300 text-white font-bold px-8 py-3 rounded-xl transition-colors disabled:cursor-not-allowed shadow-lg hover:shadow-xl"
+              className="bg-red-700 hover:bg-red-800 disabled:bg-red-300 text-white font-bold px-4 sm:px-8 py-3 rounded-xl transition-colors disabled:cursor-not-allowed shadow-lg hover:shadow-xl flex-shrink-0 h-fit mt-0 text-sm sm:text-base"
             >
               Send
             </motion.button>
