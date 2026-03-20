@@ -1,6 +1,7 @@
 import type { Metadata } from 'next';
 import './globals.css';
 import { ConfigProvider } from '../contexts/ConfigContext';
+import { ContentProvider } from '../contexts/ContentContext';
 import { ThemeProvider } from '../components/ThemeProvider';
 
 export const metadata: Metadata = {
@@ -21,7 +22,9 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
       <body className="bg-white text-gray-900 font-inter" style={{ fontFamily: '"Inter", sans-serif' }}>
         <ConfigProvider>
           <ThemeProvider>
-            {children}
+            <ContentProvider>
+              {children}
+            </ContentProvider>
           </ThemeProvider>
         </ConfigProvider>
       </body>
