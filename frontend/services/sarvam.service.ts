@@ -331,64 +331,68 @@ export class SarvamVoiceService {
   }
 
   /**
-   * Play audio blob in the browser with autoplay policy handling
+   * Play audio blob in the browser
+   * Uses HTML audio element with user-initiated playback
    */
   playAudio(audioBlob: Blob): Promise<void> {
     return new Promise((resolve, reject) => {
       try {
         const audioUrl = URL.createObjectURL(audioBlob);
-        const audio = new Audio(audioUrl);
         
-        // Enable audio preloading for faster playback
-        audio.preload = 'auto';
+        // Create audio element
+        const audio = new Audio();
+        audio.src = audioUrl;
+        audio.preload = 'metadata';
         
-        audio.onended = () => {
-          URL.revokeObjectURL(audioUrl);
+        let hasStarted = false;
+        let cleanup = false;
+
+        const cleanup_handlers = () => {
+          if (cleanup) return;
+          cleanup = true;
+          
+          // Clean up URL after a delay
+          setTimeout(() => {
+            URL.revokeObjectURL(audioUrl);
+          }, 100);
+        };
+
+        audio.addEventListener('play', () => {
+          hasStarted = true;
+          console.log('Audio playback started');
+        }, { once: true });
+
+        audio.addEventListener('ended', () => {
+          cleanup_handlers();
           resolve();
-        };
+        }, { once: true });
 
-        audio.onerror = (error) => {
-          URL.revokeObjectURL(audioUrl);
-          console.error('Audio playback error:', error);
-          reject(error);
-        };
+        audio.addEventListener('error', (e) => {
+          cleanup_handlers();
+          console.error('Audio error:', e);
+          reject(new Error('Failed to play audio'));
+        }, { once: true });
 
-        // Attempt to play with proper error handling for autoplay policies
+        // Try to play the audio
         const playPromise = audio.play();
         
         if (playPromise !== undefined) {
-          playPromise
-            .then(() => {
-              console.log('Audio playback started successfully');
-            })
-            .catch((error) => {
-              console.warn('Autoplay blocked by browser policy:', error.name);
-              
-              // Try to unmute and retry if blocked
-              if (error.name === 'NotAllowedError') {
-                // Create a new audio element with muted attribute
-                const mutedAudio = new Audio(audioUrl);
-                mutedAudio.muted = true;
-                mutedAudio.play()
-                  .then(() => {
-                    // Try to unmute after play starts
-                    setTimeout(() => {
-                      mutedAudio.muted = false;
-                      console.log('Audio unmuted after autoplay bypass');
-                    }, 100);
-                  })
-                  .catch(() => {
-                    // If even muted playback fails, show user-friendly message
-                    console.error('Audio playback failed even with muting strategy');
-                    reject(new Error('Audio playback blocked. Please enable audio in browser settings and try again.'));
-                  });
-              } else {
-                reject(error);
-              }
-            });
+          playPromise.catch((error) => {
+            console.warn('Autoplay blocked by browser:', error.name, error.message);
+            cleanup_handlers();
+            
+            // Provide specific error message for user
+            if (error.name === 'NotAllowedError') {
+              reject(new Error('Audio playback blocked by browser. Click the speaker button or use the "Play Response" button to hear the audio.'));
+            } else if (error.name === 'NotSupportedError') {
+              reject(new Error('Audio format not supported by your browser.'));
+            } else {
+              reject(error);
+            }
+          });
         }
       } catch (error) {
-        console.error('Error creating audio element:', error);
+        console.error('Error setting up audio playback:', error);
         reject(error);
       }
     });

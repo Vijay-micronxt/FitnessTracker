@@ -119,6 +119,8 @@ export default function ChatInterface() {
   const handlePlayVoiceOutput = async (text?: string) => {
     try {
       setIsVoiceOutputActive(true);
+      setVoiceError(''); // Clear any previous errors
+      
       const lastAssistantMessage = [...messages].reverse().find((m) => m.role === 'assistant');
 
       if (!lastAssistantMessage && !text) {
@@ -169,17 +171,19 @@ export default function ChatInterface() {
       const errorMessage = error instanceof Error ? error.message : 'Voice output failed';
       console.error('Voice output error:', error);
       
-      // Show user-friendly error message
-      if (errorMessage.includes('blocked') || errorMessage.includes('NotAllowed')) {
-        setVoiceError('Audio playback is blocked. Please check your browser audio settings and enable audio for this site.');
+      // Show user-friendly error message with specific guidance
+      if (errorMessage.includes('Click the speaker button') || errorMessage.includes('NotAllowedError')) {
+        setVoiceError('🔊 Audio blocked by browser. Allow audio access when prompted, or click "Play Response" button below the last message to hear it.');
+      } else if (errorMessage.includes('format not supported')) {
+        setVoiceError('❌ Your browser doesn\'t support the audio format. Please try a different browser.');
       } else if (errorMessage.includes('audio')) {
-        setVoiceError('Audio playback failed. Please try again.');
+        setVoiceError('⚠️ Audio playback failed. Please check your browser settings and try again.');
       } else {
-        setVoiceError('Voice output failed. Please try again.');
+        setVoiceError('⚠️ Voice output failed. Please try again.');
       }
       
-      // Clear error after 5 seconds
-      setTimeout(() => setVoiceError(''), 5000);
+      // Clear error after 8 seconds
+      setTimeout(() => setVoiceError(''), 8000);
     } finally {
       setIsVoiceOutputActive(false);
     }
