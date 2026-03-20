@@ -1,6 +1,7 @@
 import type { Metadata } from 'next';
 import './globals.css';
 import { ConfigProvider } from '../contexts/ConfigContext';
+import { ThemeProvider } from '../components/ThemeProvider';
 
 export const metadata: Metadata = {
   title: 'Fitness Chat - Conversational Fitness Assistant',
@@ -19,7 +20,9 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
       </head>
       <body className="bg-white text-gray-900 font-inter" style={{ fontFamily: '"Inter", sans-serif' }}>
         <ConfigProvider>
-          {children}
+          <ThemeProvider>
+            {children}
+          </ThemeProvider>
         </ConfigProvider>
       </body>
     </html>
