@@ -11,6 +11,10 @@ interface VoiceControlsProps {
   isPlaying?: boolean;
 }
 
+const MAX_RECORDING_DURATION = 30000; // 30 seconds max
+const SILENCE_DURATION = 2000; // 2 seconds of silence to stop
+const SILENCE_THRESHOLD = -50; // dB threshold for silence detection
+
 export function VoiceControls({
   onVoiceInput,
   onPlayVoiceOutput,
@@ -25,9 +29,15 @@ export function VoiceControls({
   const audioChunksRef = useRef<BlobPart[]>([]);
   const voiceServiceRef = useRef<SarvamVoiceService | null>(null);
   const audioElementRef = useRef<HTMLAudioElement | null>(null);
+  const recordingTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const silenceTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const audioContextRef = useRef<AudioContext | null>(null);
+  const analyserRef = useRef<AnalyserNode | null>(null);
 
   useEffect(() => {
-    voiceServiceRef.current = new SarvamVoiceService();
+    const apiKey = typeof window !== 'undefined' ? process.env.NEXT_PUBLIC_SARVAM_API_KEY : undefined;
+    voiceServiceRef.current = new SarvamVoiceService(apiKey);
+    console.log('VoiceControls initialized with API key:', apiKey ? 'present' : 'missing');
   }, []);
 
   const startListening = async () => {
@@ -36,23 +46,105 @@ export function VoiceControls({
       setLocalListening(true);
       setTranscribedText('');
 
+      console.log('Requesting microphone access...');
       const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-      mediaRecorderRef.current = new MediaRecorder(stream);
+      console.log('Microphone access granted');
+
+      // Try to use WAV format, fallback to default if not supported
+      const mimeType = MediaRecorder.isTypeSupported('audio/wav') 
+        ? 'audio/wav' 
+        : (MediaRecorder.isTypeSupported('audio/webm') ? 'audio/webm' : '');
+      
+      console.log('Creating MediaRecorder with MIME type:', mimeType || 'default');
+      mediaRecorderRef.current = new MediaRecorder(stream, mimeType ? { mimeType } : undefined);
       audioChunksRef.current = [];
 
+      // Setup audio analysis for silence detection
+      try {
+        const audioContext = new (window.AudioContext || (window as any).webkitAudioContext)();
+        audioContextRef.current = audioContext;
+        const analyser = audioContext.createAnalyser();
+        analyserRef.current = analyser;
+        
+        const source = audioContext.createMediaStreamSource(stream);
+        source.connect(analyser);
+        analyser.fftSize = 2048;
+
+        // Monitor volume for silence detection
+        const monitorSilence = () => {
+          const dataArray = new Uint8Array(analyser.frequencyBinCount);
+          analyser.getByteFrequencyData(dataArray);
+          
+          const average = dataArray.reduce((a, b) => a + b) / dataArray.length;
+          const isVolume = average > 30; // Threshold for detecting sound
+
+          if (!isVolume) {
+            // Silence detected - reset timer
+            if (silenceTimeoutRef.current) {
+              clearTimeout(silenceTimeoutRef.current);
+            }
+            
+            silenceTimeoutRef.current = setTimeout(() => {
+              console.log('Silence detected for 2 seconds, stopping recording...');
+              stopListening();
+            }, SILENCE_DURATION);
+          } else {
+            // Sound detected - clear silence timer
+            if (silenceTimeoutRef.current) {
+              clearTimeout(silenceTimeoutRef.current);
+              silenceTimeoutRef.current = null;
+            }
+          }
+
+          // Continue monitoring
+          if (localListening || mediaRecorderRef.current?.state === 'recording') {
+            requestAnimationFrame(monitorSilence);
+          }
+        };
+        
+        monitorSilence();
+      } catch (err) {
+        console.warn('Could not setup audio analysis:', err);
+      }
+
       mediaRecorderRef.current.ondataavailable = (event) => {
+        console.log('Audio chunk received:', event.data.size, 'bytes');
         audioChunksRef.current.push(event.data);
       };
 
       mediaRecorderRef.current.onstop = async () => {
+        // Clear all timeouts
+        if (recordingTimeoutRef.current) clearTimeout(recordingTimeoutRef.current);
+        if (silenceTimeoutRef.current) clearTimeout(silenceTimeoutRef.current);
+
         const audioBlob = new Blob(audioChunksRef.current, { type: 'audio/wav' });
         stream.getTracks().forEach((track) => track.stop());
+        
+        // Clean up audio context
+        if (audioContextRef.current) {
+          audioContextRef.current.close();
+        }
+
+        console.log('Recording stopped. Audio size:', audioBlob.size, 'bytes');
+
+        if (audioBlob.size === 0) {
+          setError('No audio recorded. Please try again.');
+          setLocalListening(false);
+          return;
+        }
 
         try {
           if (voiceServiceRef.current) {
+            console.log('Starting transcription with API service...');
             const result = await voiceServiceRef.current.speechToText(audioBlob);
+            console.log('Transcription result:', result);
             setTranscribedText(result.transcript);
-            onVoiceInput?.(result.transcript);
+            if (result.transcript) {
+              onVoiceInput?.(result.transcript);
+              setError(null);
+            } else {
+              setError('No text received from transcription. Please try again.');
+            }
           }
         } catch (err) {
           const errorMessage = err instanceof Error ? err.message : 'Failed to transcribe audio';
@@ -66,18 +158,65 @@ export function VoiceControls({
       mediaRecorderRef.current.onerror = (event) => {
         setError('Microphone error: ' + event.error);
         setLocalListening(false);
+        console.error('MediaRecorder error:', event.error);
       };
 
+      // Start recording only once
       mediaRecorderRef.current.start();
+      console.log('Recording started. Listening for voice input...');
+
+      // Auto-stop after 30 seconds
+      recordingTimeoutRef.current = setTimeout(() => {
+        if (mediaRecorderRef.current && mediaRecorderRef.current.state === 'recording') {
+          console.log('Auto-stopping recording after 30 seconds (max duration reached)');
+          stopListening();
+        }
+      }, MAX_RECORDING_DURATION);
     } catch (err) {
-      const errorMessage = err instanceof Error ? err.message : 'Microphone access denied';
-      setError(errorMessage);
+      let errorMessage = 'Microphone access denied';
+      let detailedError = '';
+
+      if (err instanceof DOMException) {
+        if (err.name === 'NotAllowedError') {
+          errorMessage = 'Microphone permission denied';
+          detailedError = 'To enable voice input:\n1. Check browser address bar for a permission prompt\n2. If already dismissed, go to Settings → Privacy → Microphone\n3. Find "Fitness Chat" and change to "Allow"\n4. Refresh the page and try again';
+        } else if (err.name === 'NotFoundError') {
+          errorMessage = 'No microphone device found';
+          detailedError = 'Please check that:\n1. Your device has a microphone\n2. Microphone is not in use by another application\n3. Try refreshing the page';
+        } else if (err.name === 'NotReadableError') {
+          errorMessage = 'Microphone is unavailable';
+          detailedError = 'Your microphone is either:\n1. Already in use by another app\n2. Disabled in system settings\n3. Disconnected (for external mics)\n\nPlease resolve and try again.';
+        } else if (err.name === 'SecurityError') {
+          errorMessage = 'Security error accessing microphone';
+          detailedError = 'This usually happens when:\n1. The site is not using HTTPS (required for mic access)\n2. Try: localhost is allowed for testing\n3. Contact support if issue persists';
+        }
+      } else if (err instanceof Error) {
+        errorMessage = err.message;
+      }
+
+      setError(detailedError || errorMessage);
       setLocalListening(false);
+      console.error('Microphone error:', err);
     }
   };
 
   const stopListening = () => {
+    // Clear all timeouts
+    if (recordingTimeoutRef.current) {
+      clearTimeout(recordingTimeoutRef.current);
+      recordingTimeoutRef.current = null;
+    }
+    if (silenceTimeoutRef.current) {
+      clearTimeout(silenceTimeoutRef.current);
+      silenceTimeoutRef.current = null;
+    }
+
     if (mediaRecorderRef.current && mediaRecorderRef.current.state !== 'inactive') {
+      console.log('Stopping recording...');
+      // Clear timeout if it exists
+      if ((mediaRecorderRef.current as any).timeoutId) {
+        clearTimeout((mediaRecorderRef.current as any).timeoutId);
+      }
       mediaRecorderRef.current.stop();
     }
   };
@@ -214,9 +353,16 @@ export function VoiceControls({
             initial={{ opacity: 0, y: -10 }}
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: -10 }}
-            className="text-xs text-red-500"
+            className="absolute bottom-full left-0 mb-2 bg-red-50 border-l-4 border-red-500 rounded p-3 max-w-xs shadow-lg"
           >
-            {error}
+            <div className="text-sm text-red-900 font-semibold mb-1">⚠️ Voice Access Issue</div>
+            <div className="text-xs text-red-700 whitespace-pre-line">{error}</div>
+            <button
+              onClick={() => setError(null)}
+              className="mt-2 text-xs text-red-600 hover:text-red-800 underline"
+            >
+              Dismiss
+            </button>
           </motion.div>
         )}
       </AnimatePresence>
