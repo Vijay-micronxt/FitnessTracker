@@ -148,7 +148,7 @@ export class SarvamVoiceService {
       const payload = {
         inputs: [text],
         target_language_code: options?.language || 'en',
-        speaker: options?.voice || 'Shubh',
+        speaker: options?.voice || 'vijay',
         pace: options?.pace || 1.0,
         temperature: options?.temperature || 0.5,
         format: options?.format || 'wav',
@@ -221,7 +221,7 @@ export class SarvamVoiceService {
         const payload = {
           inputs: [text],
           target_language_code: options?.language || 'en',
-          speaker: options?.voice || 'Shubh',
+          speaker: options?.voice || 'vijay',
           pace: options?.pace || 1.0,
           temperature: options?.temperature || 0.5,
           format: 'wav',

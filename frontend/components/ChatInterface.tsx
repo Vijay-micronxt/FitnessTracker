@@ -102,12 +102,17 @@ export default function ChatInterface() {
   };
 
   const handleVoiceInput = async (text: string, language?: string) => {
-    setInputValue(text);
-    setIsVoiceInputActive(false);
     // Track the user's spoken language for voice output
     if (language && language !== 'en') {
       setUserLanguage(language);
     }
+    
+    // Automatically send the voice input to LLM
+    console.log('Voice input received, auto-sending to LLM:', text);
+    setIsVoiceInputActive(false);
+    
+    // Send immediately without waiting for user to click send button
+    await handleSendMessage(text);
   };
 
   const handlePlayVoiceOutput = async (text?: string) => {
@@ -142,7 +147,7 @@ export default function ChatInterface() {
 
         const audioBlob = await voiceServiceRef.current.textToSpeech(finalText, {
           language: ttsLanguage,
-          voice: 'Shubh',
+          voice: 'vijay',
           pace: 1.0,
         });
 
