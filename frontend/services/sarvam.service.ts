@@ -305,40 +305,8 @@ export class SarvamVoiceService {
   }
 
   /**
-   * Translate text to English (for processing regional language input)
-   * Uses Google Translate API via free endpoint
-   */
-  async translateToEnglish(text: string, sourceLang: string): Promise<string> {
-    try {
-      if (sourceLang === 'en' || sourceLang.startsWith('en-')) {
-        return text;
-      }
-
-      console.log(`Translating from ${sourceLang} to English:`, text);
-
-      // Use Google Translate API (free, no auth needed)
-      const response = await fetch(
-        `https://api.mymemory.translated.net/get?q=${encodeURIComponent(text)}&langpair=${sourceLang}|en`
-      );
-
-      if (!response.ok) {
-        console.warn('Translation API failed, returning original text');
-        return text;
-      }
-
-      const data = await response.json();
-      const translated = data?.responseData?.translatedText || text;
-      
-      console.log('Translation result:', translated);
-      return translated;
-    } catch (error) {
-      console.warn('Translation error:', error);
-      return text;
-    }
-  }
-
-  /**
    * Translate text from English to target language (for regional voice output)
+   * Handles long text by chunking into 500 character segments (API limit)
    */
   async translateFromEnglish(text: string, targetLang: string): Promise<string> {
     try {
@@ -346,11 +314,89 @@ export class SarvamVoiceService {
         return text;
       }
 
-      console.log(`Translating from English to ${targetLang}:`, text);
+      console.log(`Translating from English to ${targetLang}:`, text.substring(0, 100) + '...');
 
-      // Use Google Translate API
+      // If text is short enough, translate directly
+      if (text.length <= 500) {
+        return this.translateChunk(text, 'en', targetLang);
+      }
+
+      // For longer text, split into sentences and translate in chunks
+      console.log(`Text length: ${text.length}, splitting into chunks...`);
+      const chunks = this.splitIntoChunks(text, 450); // 450 chars to be safe
+      const translatedChunks: string[] = [];
+
+      for (const chunk of chunks) {
+        try {
+          const translated = await this.translateChunk(chunk, 'en', targetLang);
+          translatedChunks.push(translated);
+          // Small delay to avoid rate limiting
+          await new Promise(resolve => setTimeout(resolve, 100));
+        } catch (err) {
+          console.warn('Chunk translation failed, using original:', err);
+          translatedChunks.push(chunk);
+        }
+      }
+
+      const result = translatedChunks.join('');
+      console.log('Full text translation completed');
+      return result;
+    } catch (error) {
+      console.warn('Translation error:', error);
+      return text;
+    }
+  }
+
+  /**
+   * Translate text to English (for processing regional language input)
+   * Handles long text by chunking into 500 character segments
+   */
+  async translateToEnglish(text: string, sourceLang: string): Promise<string> {
+    try {
+      if (sourceLang === 'en' || sourceLang.startsWith('en-')) {
+        return text;
+      }
+
+      console.log(`Translating from ${sourceLang} to English:`, text.substring(0, 100) + '...');
+
+      // If text is short enough, translate directly
+      if (text.length <= 500) {
+        return this.translateChunk(text, sourceLang, 'en');
+      }
+
+      // For longer text, split and translate in chunks
+      console.log(`Text length: ${text.length}, splitting into chunks...`);
+      const chunks = this.splitIntoChunks(text, 450);
+      const translatedChunks: string[] = [];
+
+      for (const chunk of chunks) {
+        try {
+          const translated = await this.translateChunk(chunk, sourceLang, 'en');
+          translatedChunks.push(translated);
+          // Small delay to avoid rate limiting
+          await new Promise(resolve => setTimeout(resolve, 100));
+        } catch (err) {
+          console.warn('Chunk translation failed, using original:', err);
+          translatedChunks.push(chunk);
+        }
+      }
+
+      const result = translatedChunks.join('');
+      console.log('Full text translation completed');
+      return result;
+    } catch (error) {
+      console.warn('Translation error:', error);
+      return text;
+    }
+  }
+
+  /**
+   * Translate a single chunk of text (respects 500 char API limit)
+   */
+  private async translateChunk(text: string, fromLang: string, toLang: string): Promise<string> {
+    try {
       const response = await fetch(
-        `https://api.mymemory.translated.net/get?q=${encodeURIComponent(text)}&langpair=en|${targetLang}`
+        `https://api.mymemory.translated.net/get?q=${encodeURIComponent(text)}&langpair=${fromLang}|${toLang}`
       );
 
       if (!response.ok) {
@@ -359,14 +405,52 @@ export class SarvamVoiceService {
       }
 
       const data = await response.json();
-      const translated = data?.responseData?.translatedText || text;
       
-      console.log('Translation result:', translated);
+      // Check for error in response
+      if (data?.responseStatus === 400) {
+        console.warn('Translation API error:', data?.responseDetails);
+        return text;
+      }
+
+      const translated = data?.responseData?.translatedText || text;
+      console.log('Translation chunk result:', translated.substring(0, 100) + '...');
       return translated;
     } catch (error) {
-      console.warn('Translation error:', error);
+      console.warn('Translation chunk error:', error);
       return text;
     }
+  }
+
+  /**
+   * Split text into chunks at sentence boundaries
+   * Tries to keep chunks under maxChunkSize while preserving sentence integrity
+   */
+  private splitIntoChunks(text: string, maxChunkSize: number): string[] {
+    if (text.length <= maxChunkSize) {
+      return [text];
+    }
+
+    const chunks: string[] = [];
+    const sentences = text.match(/[^.!?\n]+[.!?\n]+/g) || [text];
+    let currentChunk = '';
+
+    for (const sentence of sentences) {
+      if ((currentChunk + sentence).length <= maxChunkSize) {
+        currentChunk += sentence;
+      } else {
+        if (currentChunk) {
+          chunks.push(currentChunk.trim());
+        }
+        currentChunk = sentence;
+      }
+    }
+
+    if (currentChunk) {
+      chunks.push(currentChunk.trim());
+    }
+
+    console.log(`Split text into ${chunks.length} chunks`);
+    return chunks;
   }
 
   /**
