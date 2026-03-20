@@ -140,36 +140,21 @@ export function VoiceControls({
             console.log('Starting transcription with API service...');
             const result = await voiceServiceRef.current.speechToText(audioBlob);
             console.log('Transcription result:', result);
-            
+
             const detectedLang = result.language || 'en';
             setDetectedLanguage(detectedLang);
             setTranscribedText(result.transcript);
 
-            // If regional language detected, translate to English for processing
+            // Send transcript directly to backend and preserve detected language.
+            // This avoids MyMemory 429 rate-limit issues on input translation.
             if (detectedLang !== 'en' && !detectedLang.startsWith('en-')) {
-              console.log(`Detected language: ${detectedLang}. Translating to English for processing...`);
-              setIsTranslating(true);
-              
-              try {
-                const englishText = await voiceServiceRef.current.translateToEnglish(
-                  result.transcript,
-                  detectedLang
-                );
-                console.log('Translated text:', englishText);
-                // Send English translation to chat backend, but track the original language
-                onVoiceInput?.(englishText, detectedLang);
-                setError(null);
-              } catch (translateErr) {
-                console.warn('Translation failed, sending original text:', translateErr);
-                onVoiceInput?.(result.transcript, detectedLang);
-              } finally {
-                setIsTranslating(false);
-              }
+              console.log(`Detected language: ${detectedLang}. Sending original transcript for processing...`);
+              onVoiceInput?.(result.transcript, detectedLang);
             } else {
-              // English input, use as-is
               onVoiceInput?.(result.transcript, 'en');
-              setError(null);
             }
+
+            setError(null);
           }
         } catch (err) {
           const errorMessage = err instanceof Error ? err.message : 'Failed to transcribe audio';

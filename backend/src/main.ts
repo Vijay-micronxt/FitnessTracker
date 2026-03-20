@@ -75,13 +75,18 @@ app.get('/health', async () => {
 app.post('/api/chat', async (request: any, reply) => {
   app.log.info('[CHAT API] Incoming request');
   try {
-    const { message } = request.body;
+    const { message, language } = request.body;
     app.log.info(`[CHAT API] Message received: "${message.substring(0, 50)}..."`);
     
     if (!message || typeof message !== 'string') {
       app.log.warn('[CHAT API] Invalid message format');
       reply.code(400);
       return { error: 'Invalid request: message field is required' };
+    }
+    
+    // Log detected language if provided by frontend
+    if (language) {
+      app.log.info(`[CHAT API] User language: ${language}`);
     }
 
     // Check cache first
@@ -93,7 +98,7 @@ app.post('/api/chat', async (request: any, reply) => {
 
     // Process through queue to handle rate limiting
     const result = await queueService.enqueue(async () => {
-      return await processChatMessage(message, llmService, dataService, app);
+      return await processChatMessage(message, llmService, dataService, app, 3, language);
     });
 
     // Cache the response
@@ -108,6 +113,36 @@ app.post('/api/chat', async (request: any, reply) => {
 });
 
 /**
+ * Get language name from language code
+ */
+function getLanguageName(langCode?: string): string {
+  if (!langCode) return 'English';
+  
+  const langMap: Record<string, string> = {
+    'ta': 'Tamil',
+    'ta-IN': 'Tamil',
+    'te': 'Telugu',
+    'te-IN': 'Telugu',
+    'hi': 'Hindi',
+    'hi-IN': 'Hindi',
+    'kn': 'Kannada',
+    'kn-IN': 'Kannada',
+    'ml': 'Malayalam',
+    'ml-IN': 'Malayalam',
+    'bn': 'Bengali',
+    'bn-IN': 'Bengali',
+    'gu': 'Gujarati',
+    'gu-IN': 'Gujarati',
+    'mr': 'Marathi',
+    'mr-IN': 'Marathi',
+    'pa': 'Punjabi',
+    'pa-IN': 'Punjabi',
+  };
+  
+  return langMap[langCode] || 'English';
+}
+
+/**
  * Process chat message with exponential backoff for rate limit handling
  */
 async function processChatMessage(
@@ -115,7 +150,8 @@ async function processChatMessage(
   llmService: BaseService | null,
   dataService: DataService,
   app: any,
-  retries: number = 3
+  retries: number = 3,
+  userLanguage?: string
 ): Promise<{ response: string; citedArticles: any[] }> {
   try {
     let response = '';
@@ -146,7 +182,13 @@ async function processChatMessage(
           app.log.info(`[CHAT API] Built context with ${citedArticles.length} citations and ${citedArticles.reduce((sum, a) => sum + (a.images?.length || 0), 0)} images`);
         }
 
-        const systemPrompt = `You are a fitness expert assistant. When answering questions, integrate the provided fitness information naturally into your response. Do not say "the knowledge base says" or "according to the articles". Instead, present the information as factual fitness guidance. Focus on practical, actionable advice based on exercise science principles.${contextInfo}`;
+        const systemPrompt = `You are a fitness expert assistant. When answering questions, integrate the provided fitness information naturally into your response. Do not say "the knowledge base says" or "according to the articles". Instead, present the information as factual fitness guidance. Focus on practical, actionable advice based on exercise science principles.${userLanguage && userLanguage !== 'en' ? `\n\nCRITICAL LANGUAGE REQUIREMENT: You MUST respond ONLY and ENTIRELY in ${getLanguageName(userLanguage)} language. 
+- Use ONLY ${userLanguage} script throughout your entire response.
+- Do NOT mix English words, Hindi, or any other language.
+- Do NOT use Roman transliteration or English script.
+- Every single word, number, punctuation must be in ${userLanguage} script.
+- If you cannot express something in ${userLanguage}, reformulate it to use only ${userLanguage} words.
+- Check your output carefully - it should contain ZERO English characters or non-${userLanguage} script characters.` : ''}${contextInfo}`;
 
         app.log.info('[CHAT API] Calling LLM service...');
         const userMessage: LLMMessage = { role: 'user', content: message };

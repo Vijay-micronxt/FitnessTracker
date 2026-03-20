@@ -7,6 +7,8 @@ interface MessageBubbleProps {
   citedArticles?: Array<{ title: string; category: string; images?: string[] }>;
   isLoading?: boolean;
   isStreaming?: boolean;
+  onPlayAudio?: () => void;
+  isPlayingAudio?: boolean;
 }
 
 export function MessageBubble({
@@ -15,6 +17,8 @@ export function MessageBubble({
   citedArticles,
   isLoading,
   isStreaming = false,
+  onPlayAudio,
+  isPlayingAudio = false,
 }: MessageBubbleProps) {
   const [displayedText, setDisplayedText] = useState('');
   const [showCursor, setShowCursor] = useState(true);
@@ -195,6 +199,19 @@ export function MessageBubble({
                 />
               )}
             </motion.div>
+
+            {/* Play Audio Button for Assistant Messages */}
+            {!isUser && !isLoading && onPlayAudio && (
+              <motion.button
+                onClick={onPlayAudio}
+                disabled={isPlayingAudio}
+                className="mt-3 inline-flex items-center gap-2 px-3 py-2 rounded bg-red-100 hover:bg-red-200 disabled:bg-red-200 disabled:opacity-60 text-red-700 text-xs font-medium transition-colors"
+                whileHover={{ scale: 1.05 }}
+                whileTap={{ scale: 0.95 }}
+              >
+                <span>{isPlayingAudio ? '🔊 Playing...' : '🔊 Play Response'}</span>
+              </motion.button>
+            )}
 
             {citedArticles && citedArticles.length > 0 && !isUser && (
               <div className="mt-3 pt-3 border-t-2 border-red-300">
