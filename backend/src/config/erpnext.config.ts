@@ -109,6 +109,15 @@ export const ERPNEXT_DOCTYPES = {
 
   // Financial Reporting
   GL_ENTRY: 'GL Entry',
+
+  // Support & Service
+  ISSUE: 'Issue',
+  SERVICE_LEVEL_AGREEMENT: 'Service Level Agreement',
+
+  // Healthcare
+  PATIENT: 'Patient',
+  PATIENT_APPOINTMENT: 'Patient Appointment',
+  LAB_TEST: 'Lab Test',
 };
 
 /**
@@ -159,6 +168,15 @@ export const ERPNEXT_READ_OPERATIONS = [
 
   // Financial & Accounting
   ERPNEXT_DOCTYPES.GL_ENTRY,
+
+  // Support & Service
+  ERPNEXT_DOCTYPES.ISSUE,
+  ERPNEXT_DOCTYPES.SERVICE_LEVEL_AGREEMENT,
+
+  // Healthcare
+  ERPNEXT_DOCTYPES.PATIENT,
+  ERPNEXT_DOCTYPES.PATIENT_APPOINTMENT,
+  ERPNEXT_DOCTYPES.LAB_TEST,
 ];
 
 /**
