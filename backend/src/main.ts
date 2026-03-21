@@ -10,6 +10,7 @@ import { BaseService, LLMMessage } from './services/llm.base';
 import { DataService } from './services/data.service';
 import { queueService } from './services/queue.service';
 import { cacheService } from './services/cache.response.service';
+import { erpnextService } from './services/erpnext.service';
 
 const app = Fastify({
   logger: {
@@ -125,6 +126,36 @@ app.get('/api/config', async (request: any, reply) => {
     },
     environment: domainConfig.environment,
   };
+});
+
+// ERPNext test endpoint (for debugging - direct ERPNext API calls without LLM)
+app.post('/api/test/erpnext', async (request: any, reply) => {
+  app.log.info('[ERPNEXT TEST] Incoming test request');
+  try {
+    const { doctype, operation } = request.body;
+    
+    if (!doctype) {
+      return { error: 'doctype is required' };
+    }
+
+    app.log.info(`[ERPNEXT TEST] Testing ${operation || 'list'} for ${doctype}`);
+    
+    let result;
+    if (operation === 'get' && request.body.name) {
+      app.log.info(`[ERPNEXT TEST] Calling erpnextService.get(${doctype}, ${request.body.name})`);
+      result = await erpnextService.get(doctype, request.body.name);
+    } else {
+      app.log.info(`[ERPNEXT TEST] Calling erpnextService.list(${doctype})`);
+      result = await erpnextService.list(doctype, { limit: 5 });
+    }
+    
+    app.log.info(`[ERPNEXT TEST] Success - got ${Array.isArray(result) ? result.length : 1} record(s)`);
+    return { success: true, data: result };
+  } catch (error: any) {
+    app.log.error(`[ERPNEXT TEST] Error: ${error.message}`);
+    reply.code(500);
+    return { error: error.message, stack: error.stack };
+  }
 });
 
 // Chat endpoint (with LLM integration and data retrieval)

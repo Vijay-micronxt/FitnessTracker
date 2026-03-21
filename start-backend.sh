@@ -8,7 +8,11 @@ NC='\033[0m' # No Color
 
 BACKEND_DIR="/Users/vijay/Documents/FitnessTracker/fitness-chat-app/backend"
 
+# Set domain from argument or use default
+DOMAIN=${1:-fitness}
+
 echo -e "${YELLOW}Starting Fitness Chat Backend...${NC}"
+echo -e "${YELLOW}Domain: $DOMAIN${NC}"
 
 # Check if PM2 is installed
 if ! command -v pm2 &> /dev/null; then
@@ -25,14 +29,16 @@ if [ ! -d "node_modules" ]; then
 fi
 
 # Start the backend with PM2
-pm2 start npm --name "fitness-backend" -- run dev
+# Pass DOMAIN via environment variable
+DOMAIN=$DOMAIN pm2 start npm --name "fitness-backend" --update-env -- run dev
 
 # Save PM2 config for autostart on system reboot
 pm2 save
 pm2 startup
 
 echo -e "${GREEN}✓ Backend is now running in the background${NC}"
-echo -e "${GREEN}✓ Server listening at http://localhost:3001${NC}"
+echo -e "${GREEN}✓ Domain: $DOMAIN${NC}"
+echo -e "${GREEN}✓ Server listening at http://localhost:3002${NC}"
 echo ""
 echo "Useful PM2 commands:"
 echo "  pm2 logs fitness-backend       - View backend logs"

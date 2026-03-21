@@ -5,6 +5,7 @@
  */
 
 import fetch from 'node-fetch';
+import https from 'https';
 import { getERPNextConfig, ERPNextQueryOptions, ERPNEXT_READ_OPERATIONS } from '../config/erpnext.config';
 
 interface ERPNextListResponse {
@@ -24,6 +25,9 @@ export class ERPNextService {
   private config = getERPNextConfig();
   private cache: Map<string, CacheEntry> = new Map();
   private requestInProgress: Map<string, Promise<any>> = new Map();
+  private httpsAgent = new https.Agent({ rejectUnauthorized: false }); // Allow self-signed certificates
+  private readonly MAX_RECORDS_LIMIT = 50; // Maximum records to fetch per request
+  private readonly DEFAULT_LIMIT = 20; // Default records per request
 
   /**
    * List documents from ERPNext
@@ -218,9 +222,13 @@ export class ERPNextService {
       url.searchParams.append('filters', JSON.stringify(options.filters));
     }
 
-    if (options.limit) {
-      url.searchParams.append('limit_page_length', options.limit.toString());
+    // Enforce maximum records limit to protect ERPNext backend
+    let limit = options.limit || this.DEFAULT_LIMIT;
+    if (limit > this.MAX_RECORDS_LIMIT) {
+      console.warn(`[WARN] Requested limit ${limit} exceeds maximum of ${this.MAX_RECORDS_LIMIT}. Capping at ${this.MAX_RECORDS_LIMIT}`);
+      limit = this.MAX_RECORDS_LIMIT;
     }
+    url.searchParams.append('limit_page_length', limit.toString());
 
     if (options.offset) {
       url.searchParams.append('limit_start', options.offset.toString());
@@ -248,6 +256,7 @@ export class ERPNextService {
           'Content-Type': 'application/json',
         },
         timeout: this.config.timeout,
+        agent: this.httpsAgent, // Use agent that allows self-signed certificates
       } as any);
 
       if (!response.ok) {
