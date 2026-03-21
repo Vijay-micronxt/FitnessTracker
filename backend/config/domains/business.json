@@ -1,71 +1,150 @@
 {
   "id": "business",
-  "name": "Business Assistant",
-  "description": "Business coaching and professional development platform",
+  "name": "Business Assistance",
+  "description": "AI-powered business assistance with ERPNext integration",
   "version": "1.0.0",
-  "environment": "development",
+  "environment": "production",
+
   "branding": {
-    "domain": "business",
-    "brandName": "Business Assistant",
-    "brandDescription": "Your professional growth companion",
-    "brandLogo": "/assets/business/logo.png",
-    "faviconUrl": "/assets/business/favicon.ico",
+    "brandName": "Business Assistance",
+    "appName": "Business Operations Assistant",
+    "brandLogo": "/logos/business-logo.png",
+    "description": "Intelligent assistant for business operations",
     "primaryColor": "#1e40af",
-    "secondaryColor": "#0f766e",
-    "accentColor": "#fbbf24",
-    "textColor": "#111827",
-    "backgroundColor": "#f9fafb",
-    "fontFamily": "Segoe UI, Roboto, sans-serif",
-    "fontSize": {
-      "small": "13px",
-      "base": "15px",
-      "large": "18px",
-      "xlarge": "28px"
+    "secondaryColor": "#1e3a8a",
+    "accentColor": "#3b82f6",
+    "backgroundColor": "#f8fafc",
+    "textColor": "#1f2937",
+    "fontFamily": "Inter, system-ui, sans-serif"
+  },
+
+  "dataSource": {
+    "type": "rest",
+    "name": "ERPNext API",
+    "endpoint": "https://your-erpnext-instance.com",
+    "auth": {
+      "type": "custom-header",
+      "header": "Authorization",
+      "tokenFormat": "token {api_key}:{api_secret}"
+    },
+    "cacheEnabled": true,
+    "cacheTTL": 600,
+    "description": "Connects to ERPNext for business operations data"
+  },
+
+  "features": {
+    "voice": {
+      "enabled": true,
+      "input": true,
+      "output": true,
+      "languages": ["en", "hi", "ta"]
+    },
+    "chat": {
+      "enabled": true,
+      "maxMessageLength": 5000,
+      "rateLimitPerMinute": 30
+    },
+    "localization": {
+      "enabled": true,
+      "defaultLanguage": "en",
+      "supportedLanguages": ["en", "hi", "ta", "te"]
+    },
+    "dataExport": {
+      "enabled": false,
+      "formats": ["json", "csv"]
+    },
+    "advancedAnalytics": {
+      "enabled": false
     }
   },
-  "dataSource": {
-    "type": "json",
-    "filePath": "./data/business_guides.json"
-  },
+
   "llm": {
     "provider": "claude",
-    "model": "claude-3-sonnet-20240229",
-    "temperature": 0.6,
-    "maxTokens": 1500,
-    "systemPromptTemplate": "You are a seasoned business consultant and professional coach. Provide strategic business advice, leadership coaching, and professional development guidance in the {domain} domain. Focus on practical, actionable insights for career growth and business success."
+    "model": "claude-haiku-4-5-20251001",
+    "temperature": 0.7,
+    "maxTokens": 2048,
+    "systemPrompt": "You are a helpful business operations assistant integrated with ERPNext. You help users query and understand their business data. You can access information about customers, orders, invoices, payments, suppliers, and inventory. Always provide clear, structured responses and ask clarifying questions when needed."
   },
-  "features": {
-    "voiceInput": false,
-    "voiceOutput": false,
-    "videoSupport": true,
-    "socialSharing": true,
-    "userAccounts": true,
-    "offlineMode": false,
-    "analyticsTracking": true,
-    "multiLanguageSupport": false
-  },
+
   "businessLogic": {
-    "currency": "USD",
-    "maxSearchResults": 8,
-    "cacheEnabled": true,
-    "cacheTtlSeconds": 7200,
-    "supportedLanguages": ["en"],
-    "defaultLanguage": "en",
-    "rateLimitWindowMs": 3600000,
-    "rateLimitMaxRequests": 50,
-    "contentCategories": ["Leadership", "Strategy", "Marketing", "Finance", "HR", "Operations"],
-    "resultsPerPage": 15
+    "readOnlyMode": true,
+    "allowedOperations": [
+      "list_customers",
+      "list_orders",
+      "list_invoices",
+      "list_payments",
+      "list_items",
+      "search_customers",
+      "get_order_details",
+      "check_stock"
+    ],
+    "defaultFilters": {
+      "orders": {
+        "status": ["!=", "Closed"]
+      },
+      "invoices": {
+        "docstatus": 1
+      }
+    },
+    "maxRecordsPerQuery": 100,
+    "paginationLimit": 20
   },
-  "api": {
-    "baseUrl": "http://localhost:3001",
-    "timeout": 45000,
-    "retryAttempts": 3,
-    "retryDelayMs": 1000
+
+  "erp": {
+    "enabled": true,
+    "integrationPoints": [
+      "customer_data",
+      "sales_orders",
+      "invoices",
+      "payments",
+      "inventory",
+      "suppliers",
+      "projects"
+    ],
+    "timeoutMs": 30000,
+    "retryCount": 3
   },
-  "logging": {
-    "level": "info",
-    "format": "json",
-    "enableFileLogging": true,
-    "logDirectory": "./logs/business"
+
+  "supportedLanguages": [
+    {
+      "code": "en",
+      "name": "English",
+      "direction": "ltr"
+    },
+    {
+      "code": "hi",
+      "name": "हिन्दी",
+      "direction": "ltr"
+    },
+    {
+      "code": "ta",
+      "name": "தமிழ்",
+      "direction": "ltr"
+    },
+    {
+      "code": "te",
+      "name": "తెలుగు",
+      "direction": "ltr"
+    }
+  ],
+
+  "themeVariant": "light",
+  "customization": {
+    "enableCustomCSS": false,
+    "customCSSPath": "/styles/business-custom.css"
+  },
+
+  "security": {
+    "requiresAuthentication": true,
+    "sessionTimeout": 3600,
+    "enableAuditLog": true,
+    "dataEncryption": true
+  },
+
+  "metadata": {
+    "createdAt": "2026-03-21T00:00:00Z",
+    "updatedAt": "2026-03-21T00:00:00Z",
+    "author": "System",
+    "tags": ["business", "erp", "operations", "read-only"]
   }
 }

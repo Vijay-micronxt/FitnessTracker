@@ -1,60 +1,131 @@
 {
-  "appName": "Business Assistant",
-  "appDescription": "Strategic business coaching powered by AI",
-  "tagline": "Expert guidance for business growth and success",
-  "home": "Home",
-  "about": "About",
-  "help": "Help",
+  "appName": "Business Operations Assistant",
+  "appDescription": "Intelligent assistant for business operations powered by ERPNext",
+  "placeholder": "Ask me about your customers, orders, invoices, or inventory...",
+  "sendButton": "Send",
+  "micButton": "🎤 Speak",
+  "newChatButton": "New Chat",
   "settings": "Settings",
-  "logout": "Logout",
-  "login": "Login",
-  "register": "Register",
-  "placeholder": "Ask me about business strategy, marketing, operations, or growth...",
-  "send": "Send",
-  "typing": "Typing...",
-  "startChat": "Start Consulting",
-  "noMessages": "No messages yet. Ask a business question to get started!",
-  "clearChat": "Clear Conversation",
-  "voiceInput": "Voice Input",
-  "voiceOutput": "Listen to Response",
-  "startListening": "Start Listening",
-  "stopListening": "Stop Listening",
-  "listening": "Listening...",
-  "speaking": "Speaking...",
-  "speakResponse": "🔊 Play Response",
-  "cancel": "Cancel",
-  "submit": "Submit",
-  "save": "Save",
-  "delete": "Delete",
-  "edit": "Edit",
-  "close": "Close",
-  "next": "Next",
-  "previous": "Previous",
-  "loading": "Loading...",
-  "error": "Error",
-  "success": "Success",
-  "warning": "Warning",
-  "noResults": "No results found",
-  "tryAgain": "Try Again",
-  "helpTitle": "Help & Support",
-  "helpDescription": "Get help with your business questions",
-  "faq": "Frequently Asked Questions",
-  "feedback": "Send Feedback",
-  "contactUs": "Contact Us",
-  "copyright": "© 2026 Business Assistant. All rights reserved.",
-  "privacy": "Privacy Policy",
-  "terms": "Terms of Service",
-  "about_us": "About Us",
-  "businessTools": "Business Tools",
-  "coachingPlans": "Coaching Plans",
-  "resources": "Resources",
-  "casestudies": "Case Studies",
-  "mentorship": "Mentorship",
-  "courses": "Courses",
-  "certifications": "Certifications",
-  "consulting": "Consulting",
-  "getConsultation": "Get Consultation",
-  "askBusinessCoach": "Ask Business Coach",
-  "marketingGuides": "Marketing Guides",
-  "businessStrategy": "Business Strategy"
+  "language": "Language",
+  "theme": "Theme",
+  "about": "About",
+
+  "businessQueries": {
+    "showCustomers": "Show me all customers",
+    "pendingOrders": "What are my pending orders?",
+    "recentInvoices": "Show recent invoices",
+    "pendingPayments": "What payments are pending?",
+    "stockLevels": "Check stock levels",
+    "searchCustomer": "Search for a customer",
+    "orderDetails": "Get order details",
+    "supplierInfo": "Show supplier information"
+  },
+
+  "messages": {
+    "loading": "Loading data...",
+    "error": "An error occurred",
+    "noData": "No data found",
+    "success": "Success",
+    "warning": "Warning",
+    "retrying": "Retrying...",
+    "timeout": "Request timed out"
+  },
+
+  "erpNext": {
+    "customers": "Customers",
+    "orders": "Orders",
+    "invoices": "Invoices",
+    "payments": "Payments",
+    "items": "Items",
+    "suppliers": "Suppliers",
+    "projects": "Projects",
+    "stock": "Stock Level",
+    "status": "Status",
+    "amount": "Amount",
+    "date": "Date",
+    "reference": "Reference",
+    "details": "Details",
+    "actions": "Actions"
+  },
+
+  "statuses": {
+    "draft": "Draft",
+    "submitted": "Submitted",
+    "cancelled": "Cancelled",
+    "open": "Open",
+    "closed": "Closed",
+    "pending": "Pending",
+    "completed": "Completed",
+    "active": "Active",
+    "inactive": "Inactive"
+  },
+
+  "helpSection": {
+    "title": "How to use Business Operations Assistant",
+    "intro": "Ask questions about your business data in ERPNext",
+    "examples": [
+      "Show all customers",
+      "What are pending orders?",
+      "Recent invoices from Acme Corp",
+      "Check stock levels for Item-001",
+      "Show pending payments",
+      "Get details of order SO-12345"
+    ],
+    "tips": [
+      "Be specific with customer or order names for better results",
+      "Use natural language - the AI understands business terminology",
+      "Ask follow-up questions to explore the data",
+      "Voice input is available in English, Hindi, and Tamil"
+    ]
+  },
+
+  "errors": {
+    "connectionFailed": "Failed to connect to business data",
+    "invalidQuery": "Unable to process your query",
+    "unauthorized": "You don't have permission to access this data",
+    "erpNextDown": "Business system is temporarily unavailable",
+    "timeout": "Request took too long. Please try again."
+  },
+
+  "voiceMessages": {
+    "listening": "Listening...",
+    "processing": "Processing your voice...",
+    "speaking": "Speaking...",
+    "error": "Sorry, I didn't catch that"
+  },
+
+  "dataTypes": {
+    "customer": "Customer",
+    "order": "Order",
+    "invoice": "Invoice",
+    "payment": "Payment",
+    "item": "Product",
+    "supplier": "Supplier",
+    "project": "Project"
+  },
+
+  "filters": {
+    "all": "All",
+    "today": "Today",
+    "thisWeek": "This Week",
+    "thisMonth": "This Month",
+    "pending": "Pending",
+    "completed": "Completed",
+    "overdue": "Overdue"
+  },
+
+  "welcomeMessages": [
+    "Welcome to Business Operations Assistant!",
+    "I can help you with customers, orders, invoices, and more.",
+    "Ask me anything about your business data.",
+    "Type or speak your question in your preferred language."
+  ],
+
+  "footer": {
+    "poweredBy": "Powered by ERPNext",
+    "version": "1.0.0",
+    "privacy": "Privacy Policy",
+    "terms": "Terms of Service",
+    "contact": "Contact Support"
+  }
 }
