@@ -205,7 +205,11 @@ async function processChatMessage(
           app.log.info(`[CHAT API] Built context with ${citedArticles.length} citations and ${citedArticles.reduce((sum, a) => sum + (a.images?.length || 0), 0)} images`);
         }
 
-        const systemPrompt = `You are a fitness expert assistant. When answering questions, integrate the provided fitness information naturally into your response. Do not say "the knowledge base says" or "according to the articles". Instead, present the information as factual fitness guidance. Focus on practical, actionable advice based on exercise science principles.${userLanguage && userLanguage !== 'en' ? `\n\nCRITICAL LANGUAGE REQUIREMENT: You MUST respond ONLY and ENTIRELY in ${getLanguageName(userLanguage)} language. 
+        const systemPrompt = `You are a fitness expert assistant. When answering questions, integrate the provided fitness information naturally into your response. Do not say "the knowledge base says" or "according to the articles". Instead, present the information as factual fitness guidance. Focus on practical, actionable advice based on exercise science principles.
+
+CRITICAL: Do NOT include any "Sources:" section, citations, links, or article references in your response. Do NOT mention article titles, URLs, or images. The sources are handled separately by the system. Your response should contain ONLY the fitness advice content.
+${userLanguage && userLanguage !== 'en' ? `
+CRITICAL LANGUAGE REQUIREMENT: You MUST respond ONLY and ENTIRELY in ${getLanguageName(userLanguage)} language. 
 - Use ONLY ${userLanguage} script throughout your entire response.
 - Do NOT mix English words, Hindi, or any other language.
 - Do NOT use Roman transliteration or English script.
