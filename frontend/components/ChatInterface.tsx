@@ -160,16 +160,6 @@ export default function ChatInterface() {
         const data = await response.json();
         let responseContent = data.response || 'Sorry, I could not generate a response.';
 
-        // Remove sources/citations section from response if present
-        // Matches patterns like:
-        // - "📚 Sources:" or "📚 Source:"
-        // - "Sources:" or "Source:"
-        // - "\n📚 Sources:" with content after
-        // Remove everything from first occurrence of "Sources" (case-insensitive) to end
-        responseContent = responseContent.replace(/\n+[\s]*📚?\s*source[s]?:[\s\S]*$/i, '').trim();
-        // Also handle if sources appear without newline
-        responseContent = responseContent.replace(/\s+📚?\s*source[s]?:[\s\S]*$/i, '').trim();
-
         // If voice input was regional, translate only when response is still mostly English.
         if (isFromVoice && effectiveVoiceLanguage !== 'en') {
           const looksEnglish = /^[\x00-\x7F\s\p{P}]*$/u.test(responseContent);
@@ -218,7 +208,7 @@ export default function ChatInterface() {
       setIsLoading(false);
     }
     },
-    [inputValue, userLanguage]
+    [inputValue, userLanguage, voiceServiceRef]
   );
 
   const handleVoiceInput = useCallback(
@@ -236,7 +226,7 @@ export default function ChatInterface() {
       // Send immediately without waiting for user to click send button
       await handleSendMessage(text, true, detectedLanguage);
     },
-    [handleSendMessage]
+    []
   );
 
   const handlePlayVoiceOutput = useCallback(
@@ -370,7 +360,7 @@ export default function ChatInterface() {
                 transition={{ duration: 0.5, ease: 'easeInOut' }}
                 className="text-red-100 text-lg sm:text-xl font-light overflow-hidden"
               >
-                Get expert fitness guidance powered by MicroNXT AI Platform. Ask anything about workouts, health, and training.
+                Get expert fitness guidance powered by AI. Ask anything about workouts, health, and training.
               </motion.div>
             </div>
           </div>
@@ -522,7 +512,7 @@ export default function ChatInterface() {
             </motion.button>
           </form>
           <p className="text-xs text-gray-500 mt-3 text-center">
-            Powered by MicroNXT Solutions Pvt Ltd • AI Expert Fitness Knowledge • Instant Responses
+            Powered by AI • Expert Fitness Knowledge • Instant Responses
           </p>
         </div>
       </motion.div>
