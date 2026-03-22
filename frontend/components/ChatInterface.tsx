@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useRef, useEffect } from 'react';
+import React, { useState, useRef, useEffect, useCallback } from 'react';
 import { motion } from 'framer-motion';
 import { MessageBubble } from './MessageBubble';
 import { SuggestedQuestions } from './SuggestedQuestions';
@@ -51,6 +51,13 @@ export default function ChatInterface() {
   const lastPlayableMessage = [...messages].reverse().find(
     (message) => message.role === 'assistant' && message.hasAudio
   );
+
+  const normalizeLanguageCode = (language?: string) => {
+    if (!language) return 'en';
+
+    const normalized = language.split('-')[0].toLowerCase().trim();
+    return normalized || 'en';
+  };
 
   useEffect(() => {
     voiceServiceRef.current = new SarvamVoiceService();
@@ -112,71 +119,79 @@ export default function ChatInterface() {
     }
   };
 
-  const handleSendMessage = async (text?: string, isFromVoice: boolean = false) => {
-    const messageText = text || inputValue.trim();
+  const handleSendMessage = useCallback(
+    async (
+      text?: string,
+      isFromVoice: boolean = false,
+      voiceLanguage?: string
+    ) => {
+      const messageText = text || inputValue.trim();
+      const effectiveVoiceLanguage = isFromVoice
+        ? normalizeLanguageCode(voiceLanguage || userLanguage)
+        : 'en';
 
-    if (!messageText) return;
+      if (!messageText) return;
 
-    const userMessage: Message = {
-      id: Date.now().toString(),
-      role: 'user',
-      content: messageText,
-      timestamp: new Date(),
-    };
+      const userMessage: Message = {
+        id: Date.now().toString(),
+        role: 'user',
+        content: messageText,
+        timestamp: new Date(),
+      };
 
-    setMessages((prev) => [...prev, userMessage]);
-    setInputValue('');
-    setShowSuggestions(false);
-    setIsLoading(true);
+      setMessages((prev) => [...prev, userMessage]);
+      setInputValue('');
+      setShowSuggestions(false);
+      setIsLoading(true);
 
-    try {
-      const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3002';
-      const response = await fetch(`${apiUrl}/api/chat`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ 
-          message: messageText,
-          language: isFromVoice ? userLanguage : undefined // Send user's language if from voice input
-        }),
-      });
+      try {
+        const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3002';
+        const response = await fetch(`${apiUrl}/api/chat`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ 
+            message: messageText,
+            language: isFromVoice ? effectiveVoiceLanguage : undefined
+          }),
+        });
 
-      if (!response.ok) throw new Error('Failed to get response');
+        if (!response.ok) throw new Error('Failed to get response');
 
-      const data = await response.json();
-      let responseContent = data.response || 'Sorry, I could not generate a response.';
+        const data = await response.json();
+        let responseContent = data.response || 'Sorry, I could not generate a response.';
 
-      // If voice input was regional, translate only when response is still mostly English.
-      if (isFromVoice && userLanguage !== 'en' && userLanguage !== '') {
-        const looksEnglish = /^[\x00-\x7F\s\p{P}]*$/u.test(responseContent);
-        if (looksEnglish) {
-          console.log(`Translating response to ${userLanguage} for display...`);
-          try {
-            responseContent = await voiceServiceRef.current?.translateFromEnglish(responseContent, userLanguage) || responseContent;
-            console.log('Translated response for display:', responseContent);
-          } catch (err) {
-            console.warn('Translation failed, displaying original response:', err);
-            // Continue with original response if translation fails
+        // If voice input was regional, translate only when response is still mostly English.
+        if (isFromVoice && effectiveVoiceLanguage !== 'en') {
+          const looksEnglish = /^[\x00-\x7F\s\p{P}]*$/u.test(responseContent);
+          if (looksEnglish) {
+            console.log(`Translating response to ${effectiveVoiceLanguage} for display...`);
+            try {
+              responseContent = await voiceServiceRef.current?.translateFromEnglish(responseContent, effectiveVoiceLanguage) || responseContent;
+              console.log('Translated response for display:', responseContent);
+            } catch (err) {
+              console.warn('Translation failed, displaying original response:', err);
+              // Continue with original response if translation fails
+            }
+          } else {
+            console.log('Response already appears non-English; skipping translation.');
           }
-        } else {
-          console.log('Response already appears non-English; skipping translation.');
         }
-      }
 
-      const assistantMessage: Message = {
-        id: (Date.now() + 1).toString(),
+        const assistantMessage: Message = {
+          id: (Date.now() + 1).toString(),
         role: 'assistant',
         content: responseContent,
         citedArticles: data.citedArticles,
         timestamp: new Date(),
         hasAudio: false,
-        language: isFromVoice ? userLanguage : undefined,
+        language: isFromVoice ? effectiveVoiceLanguage : undefined,
       };
 
       setMessages((prev) => [...prev, assistantMessage]);
 
       if (isFromVoice && voiceServiceRef.current) {
         console.log('Voice response received. Preparing audio in background...');
-        void prepareVoiceAudio(assistantMessage.id, responseContent, userLanguage);
+        void prepareVoiceAudio(assistantMessage.id, responseContent, effectiveVoiceLanguage);
       }
     } catch (error) {
       console.error('Chat error:', error);
@@ -192,97 +207,100 @@ export default function ChatInterface() {
     } finally {
       setIsLoading(false);
     }
-  };
+    },
+    [inputValue, userLanguage, voiceServiceRef]
+  );
 
-  const handleVoiceInput = async (text: string, language?: string) => {
-    // Track the user's spoken language for voice output
-    // Normalize language code (e.g., ta-IN, en-IN)
-    if (language && language !== 'en') {
-      // Extract just the language part if it includes region (ta-IN -> ta)
-      const langCode = language.split('-')[0];
-      setUserLanguage(langCode !== 'en' ? langCode : 'en');
-      console.log(`🌐 Voice detected in ${langCode}, will respond in ${langCode}`);
-    }
-    
-    setLastInputWasVoice(true);
-    
-    // Automatically send the voice input to LLM with voice flag
-    console.log('Voice input received, auto-sending to LLM:', text, 'Language:', language);
-    setIsVoiceInputActive(false);
-    
-    // Send immediately without waiting for user to click send button
-    await handleSendMessage(text, true); // Pass true to indicate voice input
-  };
-
-  const handlePlayVoiceOutput = async (text?: string, messageId?: string) => {
-    try {
-      if (messageId) {
-        setPlayingMessageId(messageId);
-      }
-      setIsVoiceOutputActive(true);
-      setVoiceError(''); // Clear any previous errors
+  const handleVoiceInput = useCallback(
+    async (text: string, language?: string) => {
+      const detectedLanguage = normalizeLanguageCode(language);
+      setUserLanguage(detectedLanguage);
+      console.log(`🌐 Voice detected in ${detectedLanguage}, will respond in ${detectedLanguage}`);
       
-      const targetMessage = messageId 
-        ? messages.find(m => m.id === messageId)
-        : [...messages].reverse().find((m) => m.role === 'assistant');
+      setLastInputWasVoice(true);
+      
+      // Automatically send the voice input to LLM with voice flag
+      console.log('Voice input received, auto-sending to LLM:', text, 'Language:', language);
+      setIsVoiceInputActive(false);
+      
+      // Send immediately without waiting for user to click send button
+      await handleSendMessage(text, true, detectedLanguage);
+    },
+    []
+  );
 
-      if (!targetMessage && !text) {
-        console.warn('No message to play');
-        setIsVoiceOutputActive(false);
-        setPlayingMessageId(null);
-        return;
-      }
+  const handlePlayVoiceOutput = useCallback(
+    async (text?: string, messageId?: string) => {
+      try {
+        if (messageId) {
+          setPlayingMessageId(messageId);
+        }
+        setIsVoiceOutputActive(true);
+        setVoiceError(''); // Clear any previous errors
+        
+        const targetMessage = messageId 
+          ? messages.find(m => m.id === messageId)
+          : [...messages].reverse().find((m) => m.role === 'assistant');
 
-      const textToPlay = text || targetMessage?.content || '';
-      const targetMessageId = messageId || targetMessage?.id;
-      const ttsLanguage = (targetMessage?.language && targetMessage.language !== 'en' && targetMessage.language !== '') 
-        ? targetMessage.language 
-        : (userLanguage !== 'en' && userLanguage !== '' ? userLanguage : 'en');
-
-      console.log('🎤 Starting audio playback:', {
-        textLength: textToPlay.length,
-        language: ttsLanguage,
-        messageId: messageId,
-      });
-
-      if (voiceServiceRef.current) {
-        console.log(`Playing voice output in language: ${ttsLanguage}`);
-
-        const cachedChunks = targetMessageId
-          ? audioChunksCacheRef.current.get(targetMessageId)
-          : undefined;
-
-        if (!cachedChunks || cachedChunks.length === 0) {
-          setVoiceError('🔄 Audio is still being prepared. Please wait a moment and tap play again.');
+        if (!targetMessage && !text) {
+          console.warn('No message to play');
+          setIsVoiceOutputActive(false);
+          setPlayingMessageId(null);
           return;
         }
 
-        console.log(`✅ Using cached audio chunks: ${cachedChunks.length}`);
-        await voiceServiceRef.current.playAudioSequence(cachedChunks);
-        console.log('✅ Audio playback completed successfully');
+        const textToPlay = text || targetMessage?.content || '';
+        const targetMessageId = messageId || targetMessage?.id;
+        const ttsLanguage = (targetMessage?.language && targetMessage.language !== 'en' && targetMessage.language !== '') 
+          ? targetMessage.language 
+          : (userLanguage !== 'en' && userLanguage !== '' ? userLanguage : 'en');
+
+        console.log('🎤 Starting audio playback:', {
+          textLength: textToPlay.length,
+          language: ttsLanguage,
+          messageId: messageId,
+        });
+
+        if (voiceServiceRef.current) {
+          console.log(`Playing voice output in language: ${ttsLanguage}`);
+
+          const cachedChunks = targetMessageId
+            ? audioChunksCacheRef.current.get(targetMessageId)
+            : undefined;
+
+          if (!cachedChunks || cachedChunks.length === 0) {
+            setVoiceError('🔄 Audio is still being prepared. Please wait a moment and tap play again.');
+            return;
+          }
+
+          console.log(`✅ Using cached audio chunks: ${cachedChunks.length}`);
+          await voiceServiceRef.current.playAudioSequence(cachedChunks);
+          console.log('✅ Audio playback completed successfully');
+        }
+      } catch (error) {
+        const errorMessage = error instanceof Error ? error.message : 'Voice output failed';
+        console.error('❌ Voice output error:', errorMessage, error);
+        
+        // Show user-friendly error message with specific guidance
+        if (errorMessage.includes('Browser blocked') || errorMessage.includes('NotAllowedError')) {
+          setVoiceError('🔊 Browser blocked audio playback. Try: 1) Check browser audio settings, 2) Allow audio permissions, 3) Try a different browser.');
+        } else if (errorMessage.includes('format not supported')) {
+          setVoiceError('❌ Your browser doesn\'t support the audio format. Please try a different browser.');
+        } else if (errorMessage.includes('audio')) {
+          setVoiceError('⚠️ Audio playback failed: ' + errorMessage);
+        } else {
+          setVoiceError('⚠️ Voice output failed. Please try again.');
+        }
+        
+        // Clear error after 8 seconds
+        setTimeout(() => setVoiceError(''), 8000);
+      } finally {
+        setIsVoiceOutputActive(false);
+        setPlayingMessageId(null);
       }
-    } catch (error) {
-      const errorMessage = error instanceof Error ? error.message : 'Voice output failed';
-      console.error('❌ Voice output error:', errorMessage, error);
-      
-      // Show user-friendly error message with specific guidance
-      if (errorMessage.includes('Browser blocked') || errorMessage.includes('NotAllowedError')) {
-        setVoiceError('🔊 Browser blocked audio playback. Try: 1) Check browser audio settings, 2) Allow audio permissions, 3) Try a different browser.');
-      } else if (errorMessage.includes('format not supported')) {
-        setVoiceError('❌ Your browser doesn\'t support the audio format. Please try a different browser.');
-      } else if (errorMessage.includes('audio')) {
-        setVoiceError('⚠️ Audio playback failed: ' + errorMessage);
-      } else {
-        setVoiceError('⚠️ Voice output failed. Please try again.');
-      }
-      
-      // Clear error after 8 seconds
-      setTimeout(() => setVoiceError(''), 8000);
-    } finally {
-      setIsVoiceOutputActive(false);
-      setPlayingMessageId(null);
-    }
-  };
+    },
+    [messages, userLanguage]
+  );
 
   return (
     <div className="flex flex-col h-full bg-white">
