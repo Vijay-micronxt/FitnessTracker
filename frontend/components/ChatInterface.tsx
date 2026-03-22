@@ -198,9 +198,10 @@ export default function ChatInterface() {
     // Track the user's spoken language for voice output
     // Normalize language code (e.g., ta-IN, en-IN)
     if (language && language !== 'en') {
-      // Extract just the language part if it includes region (ta-IN -> ta for normalization)
+      // Extract just the language part if it includes region (ta-IN -> ta)
       const langCode = language.split('-')[0];
-      setUserLanguage(langCode !== 'en' ? language : 'en');
+      setUserLanguage(langCode !== 'en' ? langCode : 'en');
+      console.log(`🌐 Voice detected in ${langCode}, will respond in ${langCode}`);
     }
     
     setLastInputWasVoice(true);

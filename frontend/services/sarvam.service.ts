@@ -741,8 +741,15 @@ export class SarvamVoiceService {
    */
   private async translateChunk(text: string, fromLang: string, toLang: string, retries: number = 3): Promise<string> {
     try {
+      // Normalize language codes - MyMemory expects format like 'en', 'ta', 'hi' (2-letter codes)
+      // Strip region codes like 'en-IN' -> 'en', 'ta-IN' -> 'ta'
+      const normalizedFromLang = fromLang.split('-')[0].toLowerCase();
+      const normalizedToLang = toLang.split('-')[0].toLowerCase();
+      
+      console.log(`🌐 Translating [${normalizedFromLang}→${normalizedToLang}]: "${text.substring(0, 50)}..."`);
+      
       const response = await fetch(
-        `https://api.mymemory.translated.net/get?q=${encodeURIComponent(text)}&langpair=${fromLang}|${toLang}`
+        `https://api.mymemory.translated.net/get?q=${encodeURIComponent(text)}&langpair=${normalizedFromLang}|${normalizedToLang}`
       );
 
       // Handle 429 rate limit with retry
@@ -772,7 +779,7 @@ export class SarvamVoiceService {
       }
 
       const translated = data?.responseData?.translatedText || text;
-      console.log('Translation chunk result:', translated.substring(0, 100) + '...');
+      console.log('✅ Translation result:', translated.substring(0, 100) + '...');
       return translated;
     } catch (error) {
       console.warn('Translation chunk error:', error);
