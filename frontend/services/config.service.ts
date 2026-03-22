@@ -67,17 +67,19 @@ class ConfigService {
     const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3002';
     
     try {
+      console.log(`🔍 Fetching config from: ${apiUrl}/config`);
       const response = await fetch(`${apiUrl}/config`, {
         method: 'GET',
         headers: { 'Content-Type': 'application/json' },
       });
 
       if (!response.ok) {
+        console.error(`❌ Config endpoint returned status ${response.status}`);
         throw new Error(`Config endpoint returned ${response.status}`);
       }
 
       const data = await response.json();
-      console.log('✅ Backend config fetched:', data);
+      console.log('✅ Backend config fetched successfully:', data);
       return data;
     } catch (error) {
       console.error('❌ Failed to fetch backend config:', error);
@@ -89,7 +91,7 @@ class ConfigService {
    * Get default config when backend is unavailable
    */
   private getDefaultConfig(): BackendConfig {
-    return {
+    const defaultConfig = {
       features: {
         voiceInput: true,
         voiceOutput: false,
@@ -98,6 +100,8 @@ class ConfigService {
       },
       llmProvider: 'claude',
     };
+    console.log('ℹ️ Using default config (backend unavailable):', defaultConfig);
+    return defaultConfig;
   }
 
   /**

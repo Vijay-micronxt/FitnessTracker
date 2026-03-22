@@ -58,12 +58,15 @@ export default function ChatInterface() {
     // Fetch feature flags from backend
     const fetchFeatureFlags = async () => {
       try {
+        const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3002';
+        console.log('🔍 Fetching config from:', apiUrl);
         const config = await configService.getConfig();
-        setFeatureFlags(config.features);
         console.log('✅ Feature flags fetched:', config.features);
+        setFeatureFlags(config.features);
       } catch (error) {
         console.error('❌ Failed to fetch feature flags:', error);
         // Keep default feature flags on error
+        console.log('Using default feature flags');
       }
     };
     
@@ -77,6 +80,11 @@ export default function ChatInterface() {
   useEffect(() => {
     scrollToBottom();
   }, [messages]);
+
+  // Debug: Log when featureFlags change
+  useEffect(() => {
+    console.log('🎤 Feature flags updated:', featureFlags);
+  }, [featureFlags]);
 
   const prepareVoiceAudio = async (messageId: string, text: string, language: string) => {
     try {
@@ -420,6 +428,11 @@ export default function ChatInterface() {
         className="bg-white border-t-2 border-red-100 px-4 py-6 sm:px-6 shadow-2xl"
       >
         <div className="max-w-4xl mx-auto">
+          {/* Debug: Show feature flags status */}
+          <div className="mb-2 text-xs text-gray-500">
+            🎯 Features: Voice Input={featureFlags.voiceInput ? '✓' : '✗'} | Voice Output={featureFlags.voiceOutput ? '✓' : '✗'} | Multilingual={featureFlags.multilingual ? '✓' : '✗'}
+          </div>
+          
           {/* Voice Controls - Conditionally Rendered Based on Feature Flags */}
           {(featureFlags.voiceInput || featureFlags.voiceOutput) && (
             <div className="mb-4 flex items-center gap-2 pb-3 border-b border-gray-200">
