@@ -68,7 +68,30 @@ app.get('/', async () => {
 // Health check endpoint
 app.get('/health', async () => {
   app.log.info('[HEALTH] Check received');
-  return { status: 'ok', timestamp: new Date().toISOString() };
+  return { 
+    status: 'ok', 
+    timestamp: new Date().toISOString(),
+    features: {
+      voiceInput: config.featureVoiceInput,
+      voiceOutput: config.featureVoiceOutput,
+      multilingual: config.featureMultilingual,
+      supportedLanguages: config.supportedLanguages,
+    }
+  };
+});
+
+// Configuration endpoint - returns feature flags and settings
+app.get('/config', async () => {
+  app.log.info('[CONFIG] Configuration requested');
+  return {
+    features: {
+      voiceInput: config.featureVoiceInput,
+      voiceOutput: config.featureVoiceOutput,
+      multilingual: config.featureMultilingual,
+      supportedLanguages: config.supportedLanguages,
+    },
+    llmProvider: config.llmProvider,
+  };
 });
 
 // Chat endpoint (with LLM integration and data retrieval)

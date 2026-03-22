@@ -6,6 +6,7 @@ import { MessageBubble } from './MessageBubble';
 import { SuggestedQuestions } from './SuggestedQuestions';
 import { VoiceControls } from './VoiceControls';
 import SarvamVoiceService from '@/services/sarvam.service';
+import configService from '@/services/config.service';
 
 interface Message {
   id: string;
@@ -38,6 +39,12 @@ export default function ChatInterface() {
   const [voiceError, setVoiceError] = useState<string>('');
   const [lastInputWasVoice, setLastInputWasVoice] = useState(false);
   const [playingMessageId, setPlayingMessageId] = useState<string | null>(null);
+  const [featureFlags, setFeatureFlags] = useState({
+    voiceInput: true,
+    voiceOutput: false,
+    multilingual: true,
+    supportedLanguages: ['en', 'es', 'fr', 'hi', 'ta', 'te'],
+  });
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const voiceServiceRef = useRef<SarvamVoiceService | null>(null);
   const audioChunksCacheRef = useRef<Map<string, Blob[]>>(new Map());
@@ -47,6 +54,20 @@ export default function ChatInterface() {
 
   useEffect(() => {
     voiceServiceRef.current = new SarvamVoiceService();
+    
+    // Fetch feature flags from backend
+    const fetchFeatureFlags = async () => {
+      try {
+        const config = await configService.getConfig();
+        setFeatureFlags(config.features);
+        console.log('✅ Feature flags fetched:', config.features);
+      } catch (error) {
+        console.error('❌ Failed to fetch feature flags:', error);
+        // Keep default feature flags on error
+      }
+    };
+    
+    fetchFeatureFlags();
   }, []);
 
   const scrollToBottom = () => {
@@ -399,27 +420,32 @@ export default function ChatInterface() {
         className="bg-white border-t-2 border-red-100 px-4 py-6 sm:px-6 shadow-2xl"
       >
         <div className="max-w-4xl mx-auto">
-          {/* Voice Controls */}
-          <div className="mb-4 flex items-center gap-2 pb-3 border-b border-gray-200">
-            <VoiceControls
-              onVoiceInput={handleVoiceInput}
-              onPlayVoiceOutput={handlePlayVoiceOutput}
-              isListening={isVoiceInputActive}
-              isPlaying={isVoiceOutputActive}
-            />
-            {messages.length > 0 && (
-              <motion.button
-                whileHover={{ scale: 1.05 }}
-                whileTap={{ scale: 0.95 }}
-                onClick={() => handlePlayVoiceOutput(lastPlayableMessage?.content, lastPlayableMessage?.id)}
-                disabled={isVoiceOutputActive || !lastPlayableMessage}
-                className="ml-auto text-xs px-2 py-1 bg-blue-100 hover:bg-blue-200 text-blue-700 rounded-md transition-colors disabled:opacity-50"
-                title="Play last response as voice"
-              >
-                🔊 Play Response
-              </motion.button>
-            )}
-          </div>
+          {/* Voice Controls - Conditionally Rendered Based on Feature Flags */}
+          {(featureFlags.voiceInput || featureFlags.voiceOutput) && (
+            <div className="mb-4 flex items-center gap-2 pb-3 border-b border-gray-200">
+              <VoiceControls
+                onVoiceInput={featureFlags.voiceInput ? handleVoiceInput : undefined}
+                onPlayVoiceOutput={featureFlags.voiceOutput ? handlePlayVoiceOutput : undefined}
+                isListening={isVoiceInputActive}
+                isPlaying={isVoiceOutputActive}
+                enableInput={featureFlags.voiceInput}
+                enableOutput={featureFlags.voiceOutput}
+                supportedLanguages={featureFlags.multilingual ? featureFlags.supportedLanguages : ['en']}
+              />
+              {messages.length > 0 && (
+                <motion.button
+                  whileHover={{ scale: 1.05 }}
+                  whileTap={{ scale: 0.95 }}
+                  onClick={() => handlePlayVoiceOutput(lastPlayableMessage?.content, lastPlayableMessage?.id)}
+                  disabled={isVoiceOutputActive || !lastPlayableMessage}
+                  className="ml-auto text-xs px-2 py-1 bg-blue-100 hover:bg-blue-200 text-blue-700 rounded-md transition-colors disabled:opacity-50"
+                  title="Play last response as voice"
+                >
+                  🔊 Play Response
+                </motion.button>
+              )}
+            </div>
+          )}
 
           <form
             onSubmit={(e) => {

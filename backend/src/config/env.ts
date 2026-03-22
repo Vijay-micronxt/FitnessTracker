@@ -43,6 +43,12 @@ export const config = {
   // Application
   logLevel: (process.env.LOG_LEVEL || 'info') as 'debug' | 'info' | 'warn' | 'error',
   corsOrigin: process.env.CORS_ORIGIN || 'http://localhost:3000',
+
+  // Feature Flags - Voice & Multilingual Support
+  featureVoiceInput: process.env.FEATURE_VOICE_INPUT === 'true',
+  featureVoiceOutput: process.env.FEATURE_VOICE_OUTPUT === 'true',
+  featureMultilingual: process.env.FEATURE_MULTILINGUAL !== 'false',
+  supportedLanguages: (process.env.SUPPORTED_LANGUAGES || 'en,es,fr,hi,ta,te').split(',').map(l => l.trim()),
 };
 
 /**
