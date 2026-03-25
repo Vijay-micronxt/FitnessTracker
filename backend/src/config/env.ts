@@ -1,5 +1,5 @@
 import dotenv from 'dotenv';
-import { LLMProvider, LLMConfig } from '../types';
+import { Domain, LLMProvider, LLMConfig } from '../types';
 
 dotenv.config();
 
@@ -39,6 +39,9 @@ export const config = {
   cacheTtlQuery: parseInt(process.env.CACHE_TTL_QUERY || '600', 10),
   cacheTtlEmbedding: parseInt(process.env.CACHE_TTL_EMBEDDING || '3600', 10),
   cacheTtlResponse: parseInt(process.env.CACHE_TTL_RESPONSE || '86400', 10),
+
+  // Domain
+  domain: (process.env.DOMAIN || 'fitness') as Domain,
 
   // Application
   logLevel: (process.env.LOG_LEVEL || 'info') as 'debug' | 'info' | 'warn' | 'error',

@@ -1,5 +1,11 @@
 import * as fs from 'fs';
 import * as path from 'path';
+import { Domain } from '../types';
+
+const DOMAIN_CONFIG: Record<Domain, { file: string; category: string }> = {
+  fitness: { file: 'darebee_guides.json', category: 'Fitness Guide' },
+  plants: { file: 'ugaoo_products.json', category: 'Plant Guide' },
+};
 
 export interface Article {
   id: string;
@@ -13,16 +19,19 @@ export interface Article {
 export class DataService {
   private articles: Article[] = [];
   private isLoaded = false;
+  private domain: Domain;
+
+  constructor(domain: Domain) {
+    this.domain = domain;
+  }
 
   async loadData(): Promise<void> {
     if (this.isLoaded) return;
 
+    const { file, category } = DOMAIN_CONFIG[this.domain];
+
     try {
-      // Load from data directory within the project
-      const dataPath = path.join(
-        __dirname,
-        '../../data/darebee_guides.json'
-      );
+      const dataPath = path.join(__dirname, '../../data', file);
 
       if (!fs.existsSync(dataPath)) {
         console.warn(`Data file not found at ${dataPath}`);
@@ -32,17 +41,33 @@ export class DataService {
       const rawData = fs.readFileSync(dataPath, 'utf-8');
       const data = JSON.parse(rawData);
 
-      // Parse articles from the JSON structure
+      // Darebee fitness format: { articles: [{ id, url, title, elements }] }
       if (data.articles && Array.isArray(data.articles)) {
         this.articles = data.articles.map((article: any) => ({
           id: article.id,
           url: article.url,
           title: article.title,
           content: this.extractTextContent(article.elements),
-          category: 'Fitness Guide',
+          category,
           images: this.extractImageUrls(article.elements),
         }));
-        console.log(`Loaded ${this.articles.length} articles from data source`);
+        console.log(`Loaded ${this.articles.length} ${this.domain} articles from data source`);
+      }
+
+      // Ugaoo plants format: { products: [{ handle, url, title, description, images: [] }] }
+      if (data.products && Array.isArray(data.products)) {
+        this.articles = data.products.map((product: any) => ({
+          id: product.handle || product.shopify_product_id || product.url,
+          url: product.url,
+          title: product.title,
+          content: [
+            product.description || '',
+            (product.tags || []).join(', '),
+          ].filter(Boolean).join(' '),
+          category: product.category || product.product_type || category,
+          images: Array.isArray(product.images) ? product.images.slice(0, 5) : [],
+        }));
+        console.log(`Loaded ${this.articles.length} ${this.domain} products from data source`);
       }
 
       this.isLoaded = true;

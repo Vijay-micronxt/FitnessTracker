@@ -7,6 +7,7 @@ import { SuggestedQuestions } from './SuggestedQuestions';
 import { VoiceControls } from './VoiceControls';
 import SarvamVoiceService from '@/services/sarvam.service';
 import configService from '@/services/config.service';
+import { dc } from '@/lib/domainConfig';
 
 interface Message {
   id: string;
@@ -19,14 +20,6 @@ interface Message {
   language?: string; // Language of the response
 }
 
-const SUGGESTED_QUESTIONS = [
-  'How do I start working out as a beginner?',
-  'How can I increase my stamina and endurance?',
-  'Why does exercise reduce stress and anxiety?',
-  'What is the best way to recover after intense training?',
-  'How does exercise improve brain health?',
-  'What are effective breathing techniques during workouts?',
-];
 
 export default function ChatInterface() {
   const [messages, setMessages] = useState<Message[]>([]);
@@ -308,7 +301,7 @@ export default function ChatInterface() {
       <motion.div
         initial={{ opacity: 0, y: -20 }}
         animate={{ opacity: 1, y: 0 }}
-        className="bg-gradient-to-r from-red-700 via-red-600 to-red-800 text-white shadow-2xl overflow-hidden"
+        className={`${dc.gradient} text-white shadow-2xl overflow-hidden`}
         layout
       >
         <motion.div 
@@ -332,7 +325,7 @@ export default function ChatInterface() {
                   setShowSuggestions(true);
                   setInputValue('');
                 }}
-                className="mt-1 p-2 hover:bg-red-600/50 rounded-lg transition-all flex-shrink-0"
+                className="mt-1 p-2 hover:bg-white/20 rounded-lg transition-all flex-shrink-0"
                 title="Start new chat"
               >
                 <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -349,7 +342,7 @@ export default function ChatInterface() {
                 transition={{ duration: 0.6, ease: 'easeInOut' }}
                 className="font-bold font-outfit mb-3 leading-tight"
               >
-                Your Personal Fitness Assistant
+                {dc.headerTitle}
               </motion.h1>
               <motion.div
                 animate={{ 
@@ -358,9 +351,9 @@ export default function ChatInterface() {
                   marginBottom: messages.length === 0 ? '0.75rem' : 0
                 }}
                 transition={{ duration: 0.5, ease: 'easeInOut' }}
-                className="text-red-100 text-lg sm:text-xl font-light overflow-hidden"
+                className="text-white/80 text-lg sm:text-xl font-light overflow-hidden"
               >
-                Get expert fitness guidance powered by AI. Ask anything about workouts, health, and training.
+                {dc.headerSubtitle}
               </motion.div>
             </div>
           </div>
@@ -368,7 +361,7 @@ export default function ChatInterface() {
       </motion.div>
 
       {/* Messages Area */}
-      <div className="flex-1 overflow-y-auto px-4 py-8 sm:px-6 bg-gradient-to-b from-white to-red-50">
+      <div className={`flex-1 overflow-y-auto px-4 py-8 sm:px-6 ${dc.messageBg}`}>
         <div className="max-w-4xl mx-auto">
           {/* Voice Error Message */}
           {voiceError && (
@@ -396,10 +389,10 @@ export default function ChatInterface() {
                   animate={{ opacity: 1, scale: 1 }}
                   className="text-center mb-16"
                 >
-                  <div className="text-7xl mb-6">💪</div>
-                  <h2 className="text-3xl font-bold text-gray-900 mb-3">Welcome to Your Fitness Journey</h2>
+                  <div className="text-7xl mb-6">{dc.welcomeIcon}</div>
+                  <h2 className="text-3xl font-bold text-gray-900 mb-3">{dc.welcomeHeading}</h2>
                   <p className="text-gray-600 text-lg">
-                    Ask any fitness question and receive personalized expert guidance
+                    {dc.welcomeSubtext}
                   </p>
                 </motion.div>
 
@@ -410,7 +403,7 @@ export default function ChatInterface() {
                 >
                   <p className="text-center text-gray-700 font-semibold mb-6 text-lg">Popular Questions</p>
                   <SuggestedQuestions
-                    questions={SUGGESTED_QUESTIONS}
+                    questions={dc.suggestedQuestions}
                     onSelect={(question) => handleSendMessage(question)}
                   />
                 </motion.div>
@@ -444,7 +437,7 @@ export default function ChatInterface() {
       <motion.div
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
-        className="bg-white border-t-2 border-red-100 px-4 py-6 sm:px-6 shadow-2xl"
+        className={`bg-white border-t-2 ${dc.accentBorder} px-4 py-6 sm:px-6 shadow-2xl`}
       >
         <div className="max-w-4xl mx-auto">
           {/* Debug: Show feature flags status */}
@@ -495,10 +488,10 @@ export default function ChatInterface() {
                   handleSendMessage();
                 }
               }}
-              placeholder="Ask me anything about fitness... (Shift+Enter for new line)"
+              placeholder={dc.inputPlaceholder}
               disabled={isLoading}
               rows={2}
-              className="flex-1 bg-gray-100 border-2 border-gray-300 rounded-xl px-4 py-3 text-gray-900 placeholder-gray-500 focus:outline-none focus:bg-white focus:border-red-600 focus:ring-2 focus:ring-red-500/50 disabled:opacity-50 transition-all text-base resize-none"
+              className={`flex-1 bg-gray-100 border-2 border-gray-300 rounded-xl px-4 py-3 text-gray-900 placeholder-gray-500 focus:outline-none focus:bg-white ${dc.inputFocus} disabled:opacity-50 transition-all text-base resize-none`}
               style={{ minHeight: '56px', maxHeight: '120px' }}
             />
             <motion.button
@@ -506,13 +499,13 @@ export default function ChatInterface() {
               whileTap={{ scale: 0.95 }}
               type="submit"
               disabled={isLoading || !inputValue.trim()}
-              className="bg-red-700 hover:bg-red-800 disabled:bg-red-300 text-white font-bold px-4 sm:px-8 py-3 rounded-xl transition-colors disabled:cursor-not-allowed shadow-lg hover:shadow-xl flex-shrink-0 h-fit mt-0 text-sm sm:text-base"
+              className={`${dc.accentColor} ${dc.accentHover} ${dc.accentDisabled} text-white font-bold px-4 sm:px-8 py-3 rounded-xl transition-colors disabled:cursor-not-allowed shadow-lg hover:shadow-xl flex-shrink-0 h-fit mt-0 text-sm sm:text-base`}
             >
               Send
             </motion.button>
           </form>
           <p className="text-xs text-gray-500 mt-3 text-center">
-            Powered by AI • Expert Fitness Knowledge • Instant Responses
+            {dc.footerText}
           </p>
         </div>
       </motion.div>

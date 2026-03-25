@@ -1,12 +1,8 @@
 import { v4 as uuidv4 } from 'uuid';
-import { SearchResult } from '../types';
+import { Domain, SearchResult } from '../types';
 
-/**
- * Intent Classification Service
- * Maps user queries to fitness intents
- */
-export class IntentDetectionService {
-  private intentKeywords: Record<string, string[]> = {
+const INTENT_KEYWORDS: Record<Domain, Record<string, string[]>> = {
+  fitness: {
     start_fitness: ['start', 'begin', 'beginner', 'new', 'starting', 'first time'],
     create_workout_plan: ['workout plan', 'routine', 'program', 'schedule', 'training plan'],
     cardio_training: ['cardio', 'running', 'endurance', 'stamina', 'aerobic', 'heart rate'],
@@ -22,14 +18,46 @@ export class IntentDetectionService {
     exercise_science: ['science', 'mechanism', 'how does', 'physiology', 'biomechanics'],
     injury_prevention: ['injury', 'prevent', 'safety', 'form', 'technique', 'pain'],
     general_fitness: ['fitness', 'exercise', 'workout', 'training', 'health'],
-  };
+  },
+  plants: {
+    plant_care: ['care', 'maintain', 'grow', 'watering', 'water', 'sunlight', 'light'],
+    plant_selection: ['choose', 'best plant', 'recommend', 'which plant', 'suggest', 'what plant'],
+    soil_fertilizer: ['soil', 'fertilizer', 'compost', 'nutrients', 'feed', 'potting mix'],
+    pest_disease: ['pest', 'disease', 'bug', 'insect', 'fungus', 'rot', 'treatment', 'cure', 'dying'],
+    pruning: ['prune', 'trim', 'cut', 'shape', 'deadhead', 'pinch'],
+    repotting: ['repot', 'pot', 'container', 'transplant', 'roots bound', 'new pot'],
+    indoor_plants: ['indoor', 'inside', 'home', 'room', 'low light', 'apartment', 'office'],
+    outdoor_plants: ['outdoor', 'garden', 'yard', 'balcony', 'terrace', 'outside'],
+    seeds_propagation: ['seeds', 'germinate', 'sow', 'propagate', 'cutting', 'grow from'],
+    seasonal_care: ['season', 'winter', 'summer', 'monsoon', 'spring', 'autumn', 'rain'],
+    general_plants: ['plant', 'garden', 'grow', 'leaf', 'flower', 'bloom', 'tree', 'shrub'],
+  },
+};
+
+const DEFAULT_INTENT: Record<Domain, string> = {
+  fitness: 'general_fitness',
+  plants: 'general_plants',
+};
+
+/**
+ * Intent Classification Service
+ * Maps user queries to domain-specific intents
+ */
+export class IntentDetectionService {
+  private intentKeywords: Record<string, string[]>;
+  private defaultIntent: string;
+
+  constructor(domain: Domain) {
+    this.intentKeywords = INTENT_KEYWORDS[domain];
+    this.defaultIntent = DEFAULT_INTENT[domain];
+  }
 
   /**
    * Detect user intent from query
    */
   public detectIntent(query: string): string {
     const lowerQuery = query.toLowerCase();
-    let topIntent = 'general_fitness';
+    let topIntent = this.defaultIntent;
     let maxMatches = 0;
 
     for (const [intent, keywords] of Object.entries(this.intentKeywords)) {

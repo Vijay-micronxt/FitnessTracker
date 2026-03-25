@@ -46,11 +46,28 @@ p {
 }
 
 ::-webkit-scrollbar-track {
-  @apply bg-red-100;
+  background: var(--scrollbar-track, #f1f5f9);
 }
 
 ::-webkit-scrollbar-thumb {
-  @apply bg-red-600 rounded hover:bg-red-700;
+  background: var(--scrollbar-thumb, #94a3b8);
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: var(--scrollbar-thumb-hover, #64748b);
+}
+
+[data-domain="fitness"] {
+  --scrollbar-track: #fee2e2;
+  --scrollbar-thumb: #dc2626;
+  --scrollbar-thumb-hover: #b91c1c;
+}
+
+[data-domain="plants"] {
+  --scrollbar-track: #dcfce7;
+  --scrollbar-thumb: #16a34a;
+  --scrollbar-thumb-hover: #15803d;
 }
 
 /* Animations */

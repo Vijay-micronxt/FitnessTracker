@@ -1,3 +1,6 @@
+// Domain Types
+export type Domain = 'fitness' | 'plants';
+
 // LLM Provider Types
 export type LLMProvider = 'openai' | 'claude' | 'ollama';
 
@@ -44,7 +47,7 @@ export interface SearchResult {
 }
 
 // Intent Types
-export type UserIntent =
+export type FitnessIntent =
   | 'start_fitness'
   | 'create_workout_plan'
   | 'cardio_training'
@@ -60,6 +63,21 @@ export type UserIntent =
   | 'exercise_science'
   | 'injury_prevention'
   | 'general_fitness';
+
+export type PlantsIntent =
+  | 'plant_care'
+  | 'plant_selection'
+  | 'soil_fertilizer'
+  | 'pest_disease'
+  | 'pruning'
+  | 'repotting'
+  | 'indoor_plants'
+  | 'outdoor_plants'
+  | 'seeds_propagation'
+  | 'seasonal_care'
+  | 'general_plants';
+
+export type UserIntent = FitnessIntent | PlantsIntent;
 
 export interface IntentResult {
   intent: UserIntent;

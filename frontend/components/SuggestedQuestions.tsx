@@ -1,5 +1,6 @@
 import React from 'react';
 import { motion } from 'framer-motion';
+import { dc } from '@/lib/domainConfig';
 
 interface SuggestedQuestionsProps {
   questions: string[];
@@ -34,7 +35,7 @@ export function SuggestedQuestions({ questions, onSelect }: SuggestedQuestionsPr
       animate="visible"
       className="space-y-3"
     >
-      <p className="text-sm text-red-700 font-medium">💡 Suggested questions:</p>
+      <p className={`text-sm ${dc.chipLabel} font-medium`}>💡 Suggested questions:</p>
       <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
         {questions.map((question, idx) => (
           <motion.button
@@ -43,7 +44,7 @@ export function SuggestedQuestions({ questions, onSelect }: SuggestedQuestionsPr
             whileHover={{ scale: 1.02 }}
             whileTap={{ scale: 0.98 }}
             onClick={() => onSelect(question)}
-            className="p-3 text-left text-sm bg-white hover:bg-red-50 rounded-lg border-2 border-red-300 hover:border-red-600 transition-all text-red-900 hover:text-red-700 shadow-sm hover:shadow-md"
+            className={`p-3 text-left text-sm bg-white ${dc.chipBgHover} rounded-lg border-2 ${dc.chipBorder} ${dc.chipBorderHover} transition-all ${dc.chipText} ${dc.chipTextHover} shadow-sm hover:shadow-md`}
           >
             {question}
           </motion.button>

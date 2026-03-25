@@ -28,10 +28,10 @@ try {
   // Will handle gracefully in endpoint
 }
 
-// Initialize Data service
-const dataService = new DataService();
-app.log.info('[INIT] Loading data service...');
-dataService.loadData().catch(err => 
+// Initialize Data service (domain-scoped)
+const dataService = new DataService(config.domain);
+app.log.info(`[INIT] Loading data service for domain: ${config.domain}...`);
+dataService.loadData().catch(err =>
   app.log.error(`[INIT] Failed to load data source: ${err.message}`)
 );
 app.log.info('[INIT] Data service loaded');
@@ -53,10 +53,11 @@ const registerMiddleware = async () => {
 // Root endpoint
 app.get('/', async () => {
   app.log.info('[ROOT] Health check');
-  return { 
-    message: 'Fitness Chat API', 
+  return {
+    message: 'Chat API',
     version: '1.0.0',
     status: 'running',
+    domain: config.domain,
     llmProvider: config.llmProvider,
     endpoints: {
       health: '/health',
@@ -190,22 +191,39 @@ async function processChatMessage(
         // Build context from relevant articles
         let contextInfo = '';
         if (relevantArticles.length > 0) {
-          contextInfo = '\n\nRelevant fitness articles and guides to reference:\n\n';
+          contextInfo = '\n\nRelevant articles to reference:\n\n';
           relevantArticles.forEach((article, idx) => {
             contextInfo += `[${idx + 1}] ${article.title}\n`;
-            contextInfo += article.content.substring(0, 500) + '...\n\n';
+            contextInfo += article.content.substring(0, 500) + '...\n';
+            if (article.images && article.images.length > 0) {
+              contextInfo += `Available images for this article:\n`;
+              article.images.slice(0, 3).forEach((imgUrl, imgIdx) => {
+                contextInfo += `  IMAGE_${idx + 1}_${imgIdx + 1}: ${imgUrl}\n`;
+              });
+            }
+            contextInfo += '\n';
           });
-          
+
           citedArticles = relevantArticles.map(article => ({
             title: article.title,
-            category: article.category || 'Fitness Guide',
+            category: article.category || 'Guide',
             url: article.url,
-            images: article.images || [], // Include article images
+            images: article.images || [],
           }));
           app.log.info(`[CHAT API] Built context with ${citedArticles.length} citations and ${citedArticles.reduce((sum, a) => sum + (a.images?.length || 0), 0)} images`);
         }
 
-        const systemPrompt = `You are a fitness expert assistant. When answering questions, integrate the provided fitness information naturally into your response. Do not say "the knowledge base says" or "according to the articles". Instead, present the information as factual fitness guidance. Focus on practical, actionable advice based on exercise science principles.${userLanguage && userLanguage !== 'en' ? `\n\nCRITICAL LANGUAGE REQUIREMENT: You MUST respond ONLY and ENTIRELY in ${getLanguageName(userLanguage)} language. 
+        const domainSystemPrompts: Record<string, string> = {
+          fitness: 'You are a fitness expert assistant. When answering questions, integrate the provided fitness information naturally into your response. Do not say "the knowledge base says" or "according to the articles". Instead, present the information as factual fitness guidance. Focus on practical, actionable advice based on exercise science principles.',
+          plants: 'You are a plant care and gardening expert assistant. When answering questions, integrate the provided plant information naturally into your response. Do not say "the knowledge base says" or "according to the articles". Instead, present the information as factual plant care guidance. Focus on practical, actionable advice based on horticulture principles.',
+        };
+        const basePrompt = domainSystemPrompts[config.domain] ?? domainSystemPrompts.fitness;
+
+        const imageInstruction = contextInfo.includes('IMAGE_')
+          ? '\n\nIMAGE EMBEDDING INSTRUCTIONS: When images are provided in the context, embed them inline in your response at the most relevant point using this exact format on its own line: [IMAGE: <url>]. Place the image where it best illustrates the point being made — after a relevant heading, explanation, or step. Use at most 2 images per response. Only embed images from the provided IMAGE_ references. Do not mention images in text — just place the marker.'
+          : '';
+
+        const systemPrompt = `${basePrompt}${imageInstruction}${userLanguage && userLanguage !== 'en' ? `\n\nCRITICAL LANGUAGE REQUIREMENT: You MUST respond ONLY and ENTIRELY in ${getLanguageName(userLanguage)} language.
 - Use ONLY ${userLanguage} script throughout your entire response.
 - Do NOT mix English words, Hindi, or any other language.
 - Do NOT use Roman transliteration or English script.
@@ -256,6 +274,7 @@ const start = async () => {
     app.log.info(`[START] Server listening at http://0.0.0.0:${config.port}`);
     app.log.info(`[START] Server running on http://localhost:${config.port}`);
     app.log.info(`[START] LLM Provider: ${config.llmProvider}`);
+    app.log.info(`[START] Domain: ${config.domain}`);
     app.log.info('[START] Ready to accept requests!');
   } catch (err) {
     app.log.error(`[START] Fatal error: ${err}`);
