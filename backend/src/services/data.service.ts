@@ -63,6 +63,8 @@ export class DataService {
           content: [
             product.description || '',
             (product.tags || []).join(', '),
+            product.category || '',
+            product.product_type || '',
           ].filter(Boolean).join(' '),
           category: product.category || product.product_type || category,
           images: Array.isArray(product.images) ? product.images.slice(0, 5) : [],
@@ -94,6 +96,20 @@ export class DataService {
     return text.trim();
   }
 
+  private static readonly PLANT_CATEGORIES = new Set([
+    'indoor plants', 'low light plants', 'xl plants', 'fruit plants',
+    'vegetable seeds', 'flower seeds', 'flower bulbs', 'herb seeds',
+    'tree & grass seeds', 'seeds kits',
+  ]);
+
+  private isPlantProduct(article: Article): boolean {
+    const cat = (article.category || '').toLowerCase();
+    return DataService.PLANT_CATEGORIES.has(cat) ||
+      cat.includes('plant') ||
+      cat.includes('seed') ||
+      cat.includes('bulb');
+  }
+
   searchArticles(query: string, limit: number = 3): Article[] {
     if (!this.isLoaded || this.articles.length === 0) {
       return [];
@@ -118,6 +134,11 @@ export class DataService {
         const matches = (contentLower.match(new RegExp(word, 'g')) || []).length;
         score += matches;
       });
+
+      // Boost plant-category products so accessories/appliances rank lower
+      if (this.domain === 'plants' && this.isPlantProduct(article)) {
+        score *= 2;
+      }
 
       return { article, score };
     });

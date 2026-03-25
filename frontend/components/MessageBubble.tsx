@@ -126,7 +126,8 @@ export function MessageBubble({
     };
 
     for (const line of lines) {
-      const imageMatch = line.match(/^\[IMAGE:\s*(https?:\/\/[^\]]+)\]$/);
+      const imageMatch = line.match(/^\[IMAGE:\s*(https?:\/\/[^\]]+)\]$/) ||
+                         line.match(/^!\[[^\]]*\]\((https?:\/\/[^)]+)\)$/);
       if (imageMatch) {
         flushPara();
         const url = imageMatch[1].trim();

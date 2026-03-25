@@ -219,11 +219,7 @@ async function processChatMessage(
         };
         const basePrompt = domainSystemPrompts[config.domain] ?? domainSystemPrompts.fitness;
 
-        const imageInstruction = contextInfo.includes('IMAGE_')
-          ? '\n\nIMAGE EMBEDDING INSTRUCTIONS: When images are provided in the context, embed them inline in your response at the most relevant point using this exact format on its own line: [IMAGE: <url>]. Place the image where it best illustrates the point being made — after a relevant heading, explanation, or step. Use at most 2 images per response. Only embed images from the provided IMAGE_ references. Do not mention images in text — just place the marker.'
-          : '';
-
-        const systemPrompt = `${basePrompt}${imageInstruction}${userLanguage && userLanguage !== 'en' ? `\n\nCRITICAL LANGUAGE REQUIREMENT: You MUST respond ONLY and ENTIRELY in ${getLanguageName(userLanguage)} language.
+        const systemPrompt = `${basePrompt}${userLanguage && userLanguage !== 'en' ? `\n\nCRITICAL LANGUAGE REQUIREMENT: You MUST respond ONLY and ENTIRELY in ${getLanguageName(userLanguage)} language.
 - Use ONLY ${userLanguage} script throughout your entire response.
 - Do NOT mix English words, Hindi, or any other language.
 - Do NOT use Roman transliteration or English script.
@@ -236,6 +232,12 @@ async function processChatMessage(
         const llmResponse = await llmService.chat([userMessage], systemPrompt);
         response = llmResponse.content;
         app.log.info(`[CHAT API] LLM response received (${response.length} chars)`);
+
+        // Inject images from the top-scoring article only
+        const topImages = (relevantArticles[0]?.images || []).filter(Boolean);
+        if (topImages.length > 0) {
+          response = injectImagesIntoResponse(response, topImages);
+        }
       } catch (llmError: any) {
         // Check if it's a rate limit error (429)
         if (llmError.status === 429 && retries > 0) {
@@ -262,6 +264,47 @@ async function processChatMessage(
     app.log.error(`[CHAT API] processChatMessage error: ${error.message}`);
     throw error;
   }
+}
+
+/**
+ * Inject image markers into LLM response at natural breakpoints.
+ * Places first image after the intro paragraph, second after the first section heading.
+ */
+function injectImagesIntoResponse(text: string, imageUrls: string[]): string {
+  if (!imageUrls.length) return text;
+
+  const lines = text.split('\n');
+  const result: string[] = [];
+  let imagesInserted = 0;
+  const maxImages = Math.min(2, imageUrls.length);
+  let introFlushed = false;
+  let blanksSeen = 0;
+
+  for (let i = 0; i < lines.length; i++) {
+    const line = lines[i];
+    result.push(line);
+
+    // Insert first image after the first blank line (end of intro paragraph)
+    if (!introFlushed && line.trim() === '') {
+      blanksSeen++;
+      if (blanksSeen === 1 && imagesInserted < maxImages) {
+        result.push(`[IMAGE: ${imageUrls[imagesInserted++]}]`);
+        result.push('');
+        introFlushed = true;
+      }
+    }
+
+    // Insert second image after the first section heading (## or ###)
+    if (
+      imagesInserted < maxImages &&
+      introFlushed &&
+      (line.startsWith('## ') || line.startsWith('### '))
+    ) {
+      result.push(`[IMAGE: ${imageUrls[imagesInserted++]}]`);
+    }
+  }
+
+  return result.join('\n');
 }
 
 // Start server
